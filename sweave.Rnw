@@ -1,0 +1,36 @@
+
+\documentclass{article}
+
+\begin{document}
+
+
+<<setup-options, include = FALSE, echo=FALSE>>=
+require(ggplot2)
+options(digits = 16) # Nachkommastellen (#Stellen)
+knitr::opts_chunk$set(echo=FALSE, cache = TRUE)
+@
+
+<<load-data, include=FALSE>>=
+
+codeTableFitness <- data.table::fread("C:/Users/feroc/Documents/ThesisLocal/Simulations/0/codeTableFitness.csv", header=FALSE, quote="\"", integer64 = 'double')
+codeTableFitness <- as.double(codeTableFitness$V1)
+#codeTableFitness <- head(codeTableFitness, length(codeTableFitness))
+codeTableFitness <- na.omit(codeTableFitness)
+which (is.na(codeTableFitness))
+@
+
+
+<<fig.cap="codeTableFitness">>=
+tail <- tail(codeTableFitness,10)
+plot(1:length(tail), tail)
+@
+
+<<>>=
+
+summary(codeTableFitness, na.rm = T)
+tail(codeTableFitness,10)
+#xtable(tail(codeTableFitness,10))
+@
+
+
+\end{document}
