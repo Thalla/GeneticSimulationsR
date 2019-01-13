@@ -24,7 +24,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{hyperref}
 \hypersetup{unicode=true,
-            pdftitle={R Notebook},
+            pdftitle={Statistics},
             pdfborder={0 0 0},
             breaklinks=true}
 \urlstyle{same}  % don't use monospace font for urls
@@ -113,7 +113,7 @@
 
 \setlength{\droptitle}{-2em}
 
-  \title{R Notebook}
+  \title{Statistics}
     \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
     \author{}
@@ -125,23 +125,69 @@
 \begin{document}
 \maketitle
 
-xtable is for making latex tables from r objects
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{dir}\NormalTok{(}\DataTypeTok{path =} \KeywordTok{paste0}\NormalTok{(}\KeywordTok{getwd}\NormalTok{(),}\StringTok{"/hmm/"}\NormalTok{, }\DataTypeTok{pattern=}\StringTok{".docx"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
 
-This is an \href{http://rmarkdown.rstudio.com}{R Markdown} Notebook.
-When you execute code within the notebook, the results appear beneath
-the code.
-
-Try executing this chunk by clicking the \emph{Run} button within the
-chunk or by placing your cursor inside it and pressing
-\emph{Ctrl+Shift+Enter}.
+\begin{verbatim}
+## character(0)
+\end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(cars)}
+\NormalTok{##character(0)}
+\KeywordTok{library}\NormalTok{(WordR)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'WordR' was built under R version 3.5.2
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(officer)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'officer' was built under R version 3.5.2
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(ggplot2)}
+\NormalTok{plotti <-}\StringTok{ }\KeywordTok{plot}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{notebook_files/figure-latex/unnamed-chunk-1-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{addPlots}\NormalTok{(}\StringTok{"hmm/thesis.docx"}\NormalTok{, }\StringTok{"hmm/thesis2.docx"}\NormalTok{, plotti, }\DataTypeTok{height =} \DecValTok{4}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "hmm/thesis2.docx"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{renderInlineCode}\NormalTok{(}\StringTok{"hmm/thesis.docx"}\NormalTok{, }\StringTok{"hmm/thesis2.docx"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "hmm/thesis2.docx"
+\end{verbatim}
+
+xtable is for making latex tables from r objects
+
+This is an \href{http://rmarkdown.rstudio.com}{R Markdown} Notebook.
 
 Add a new chunk by clicking the \emph{Insert Chunk} button on the
 toolbar or by pressing \emph{Ctrl+Alt+I}.
