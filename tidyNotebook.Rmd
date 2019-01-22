@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(flextable)
+
+basePath <- "C:/Users/feroc/Documents/ThesisLocal/SimulationTree2/selection_false/translMethod_probability/"
+configPath <- paste(basePath, "config.csv", sep = "")
+config <- data.table::fread(configPath)
+  #mRNA_s2000_c64_gl3_gn22_#1/initAaNumb_20/similar_true/aaRS_s200_ac6_lt10/livingAars_n22_s20/output_s1/codeTableFitness.csv")
+colnames(config) <- c("mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+outputPath <- paste(config$livingAarsDir, paste("output_s", config$outputSeed, sep = ""), sep = "/")
+fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "/")
+
+fitness <- c()
+for(row in 1:length(fitnessPaths)){
+  fitness[row] <- data.table::fread(fitnessPaths[row])
+}
+
+fit <- c()
+for(row in 1:length(fitness)){
+  fit <- rbind(fit, fitness[[row]])
+}
+
+sum <- c()
+for(row in 1:nrow(fit)){
+  sum <- rbind(sum, summary(fit[row,]))
+}
+
+config <- cbind(config, sum)
+
+
+
+```
+```{r}
+data <- tail(data$V1,length(data$V1)-20)
+
+data
+
+summary(data)
+
+data <- tail(data, 1000)
+
+norm <- rnorm(length(data), mean(data), sd(data))
+chisq.test(data, norm)
+```
+

@@ -107,6 +107,7 @@ for(i in 0 : as.integer(counts[8])){
 normalCheck
 shapiro.test(normalCheck)
 ks.test(normalCheck, "pnorm", mean = mean(normalCheck), sd = sd(normalCheck) )
+library(ggpubr)
 ggqqplot(normalCheck)
 
 ```
