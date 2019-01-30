@@ -1,0 +1,106 @@
+---
+title: "Analysis of 100.000.000 simulation steps with one parameter set"
+output:
+  html_document:
+    df_print: paged
+---
+```{r include=FALSE}
+library(flextable)
+library(summarytools)
+```
+
+
+
+```{r include=FALSE}
+basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_affinity/"
+configPath <- paste(basePath, "configLongRun.csv", sep = "")
+configLongRun <- data.table::fread(configPath)
+colnames(configLongRun) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+  #get paths
+  outputPath <- paste(configLongRun$livingAarsDir, paste("output_s", configLongRun$outputSeed, sep = ""), sep = "")
+  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
+  # read fitness values from paths
+  fitnessLongRun <- c()
+    fitnessLongRun <- data.table::fread(fitnessPaths[1])
+    fitnessLongRun <- as.double(fitnessLongRun[[1]])
+    fitnessLongRun <- tail(fitnessLongRun, length(fitnessLongRun)-20)
+   
+```
+
+###Parameters 
+
+
+**Translation type:** anticodon translation is chosen by `r configLongRun$translationType`
+
+
+**Number of available codons:**  `r configLongRun$codonNumb`
+
+
+**Number of genes that are translated:** `r configLongRun$geneNumb`
+
+
+**Number of available amino acids:** `r configLongRun$initAaNumb`
+
+
+**Similarity of aarS (true/false):** `r configLongRun$similarAars`
+
+
+**Maximal number of anticodons that can be translated per aaRS:** `r configLongRun$maxAnticodonNumb`
+
+
+**Lifeticks start value for living aaRS:** `r configLongRun$aarsLifeticksStartValue`
+
+
+**Initial number of living aaRS:** `r configLongRun$livingAarsStartNumb`
+
+
+
+
+###Last 100 fitness values:
+
+`r tail(fitnessLongRun, 100)`
+
+
+
+### Descriptive Statistics
+
+
+```{r echo=FALSE, results='asis'}
+
+descr(fitnessLongRun, style='rmarkdown', transpose = TRUE, round.digits = 4)
+```
+
+###Box-Whisker-Plot
+
+```{r echo=FALSE}
+boxplot(fitnessLongRun)
+
+```
+
+
+The median lies in the middle of the first and third quartile, which means that the data is symmetrical with a low se skewness. The interquartile range of 0.0060 shows that 50% percent of the data (represented by the box of the plot) lies very near to the median. Outside the whiskers the outliers can be seen. The whiskers go to the biggest data point lower than 1.5 times the interquartile range. 
+
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+# installing/loading the package:
+if(!require(installr)) { install.packages("installr"); require(installr)} #load / install+load installr
+
+# Installing pandoc
+install.pandoc()name = "C:/Users/h.schumacher/Documents/R/LongRunNotebook"
+library(knitr)
+knit(paste0(name, ".Rmd"), encoding = "utf-8")
+system(paste0("pandoc -o ", name, ".docx ", name, ".md"))
+
+
+
+name = "C:/Users/h.schumacher/Documents/R/LongRunNotebook"
+library(knitr)
+knit(paste0(name, ".Rmd"), encoding = "utf-8")
+system(paste0("pandoc -o ", name, ".docx ", name, ".md"))
+```
+
+
+

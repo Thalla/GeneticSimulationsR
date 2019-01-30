@@ -4,36 +4,100 @@ output:
   html_document:
     df_print: paged
 ---
+```{r Long Run}
+basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_affinity/"
+configPath <- paste(basePath, "configLongRun.csv", sep = "")
+configLongRun <- data.table::fread(configPath)
+colnames(configLongRun) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+  #get paths
+  outputPath <- paste(configLongRun$livingAarsDir, paste("output_s", configLongRun$outputSeed, sep = ""), sep = "")
+  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
+  # read fitness values from paths
+  fitnessLongRun <- c()
+  for(row in 1:length(fitnessPaths)){
+    fitnessLongRun[row] <- data.table::fread(fitnessPaths[row], integer64= "double")
+    fitnessLongRun[row] <- tail(fitnessLongRun[row], length(fitnessLongRun[row])-20)
+  }
+  summary(fitnessLongRun)
+  boxplot(tail(fitnessLongRun, length(fitnessLongRun)-20))
+
+```
 
 
-```{r}
+```{r read all data}
 library(flextable)
 
-basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_probability/"
-configPath <- paste(basePath, "config.csv", sep = "")
-config <- data.table::fread(configPath)
-  #mRNA_s2000_c64_gl3_gn22_#1/initAaNumb_20/similar_true/aaRS_s200_ac6_lt10/livingAars_n22_s20/output_s1/codeTableFitness.csv")
-ids <- c(1:nrow(config))
-config <- cbind(ids, config)
-colnames(config) <- c("id", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
-outputPath <- paste(config$livingAarsDir, paste("output_s", config$outputSeed, sep = ""), sep = "")
-fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
- 
+
 fitness <- c()
-for(row in 1:length(fitnessPaths)){
-  fitness[row] <- data.table::fread(fitnessPaths[row])
-}
+config <- c()
+
+
+  # read config
+  basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_affinity/"
+  configPath1 <- paste(basePath, "config.csv", sep = "")
+  basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_random/"
+  configPath2 <- paste(basePath, "config.csv", sep = "")
+  basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_max/"
+  configPath3 <- paste(basePath, "config.csv", sep = "")
+  configPath <- rbind(configPath1, configPath2, configPath3)
+  config <- apply(configPath, FUN = function(path){data.table::fread(path)}, MARGIN = 1)
+  
+  # set column names
+  colnames(config) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+  #get paths
+  outputPath <- paste(config$livingAarsDir, paste("output_s", config$outputSeed, sep = ""), sep = "")
+  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
+  # read fitness values from paths
+  fitness <- c()
+  for(row in 1:length(fitnessPaths)){
+    fitness[row] <- data.table::fread(fitnessPaths[row])
+    fitness[row] <- tail(fitness[row], length(fitness[row])-20)
+  }
+
+
+
+
+#data.table("translationType" = "affinity", config)
+# set config ids
+  #ids <- c(1:nrow(config))
+  #config <- cbind(ids, config)
+#config <- data.table::fread(configPath)
+  
+
+  #mRNA_s2000_c64_gl3_gn22_#1/initAaNumb_20/similar_true/aaRS_s200_ac6_lt10/livingAars_n22_s20/output_s1/codeTableFitness.csv")
+
+
+
+
+ 
+
 
 sum <- c()
 for(row in 1:length(fitness)){
   sum <- rbind(sum, summary(fitness[[row]]))
 }
 
-config <- cbind(config, sum)
+configRandom <- cbind(configRandom, sum)
 
 
 
 
+
+```
+
+```{r}
+pos <- 944
+fitnessValues <- fitness[[pos]]
+
+# count number of generations that the cell lived
+notNullValues <- length(which(fitnessValues > 0))
+
+# if cell didn't die
+if(notNullValues == length(fitnessValues)){
+  # check if there are repetitive values
+  counted <- rle(fitnessValues)
+  counted$values[counted$lengths != 1]
+}
 
 ```
 
@@ -137,4 +201,73 @@ data <- config$Mean
 norm <- rnorm(length(data), mean(data), sd(data))
 chisq.test(data, norm)
 ```
+
+
+
+
+```{r}
+# for WEKA
+library(data.table)
+conf <- config[which(config$codonNumb == 64)]
+#nominalMeans <- config$Mean >
+mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, maxAnticodonNumb = conf$maxAnticodonNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, mean = conf$Mean)
+
+
+cutResult = cut(config$Mean, 10, ordered_result = TRUE)
+levels(cutResult)
+
+fun <- function(listElement){
+value <- listElement
+if(listElement <= 0.1) value = 0.1
+else if(listElement <= 0.2) value = 0.2
+  else if(listElement <= 0.3) value = 0.3
+  else if(listElement <= 0.4) value = 0.4
+  else if(listElement <= 0.5) value = 0.5
+  else if(listElement <= 0.6) value = 0.6
+  else if(listElememt <= 0.7) value = 0.7
+  else if(listElement <= 0.8) value = 0.8
+  else if(listElement <= 0.9) value = 0.9
+  else if(listElement <= 1.0) value = 1.0
+return(value)
+}
+
+
+conf <- config[which(config$codonNumb == 64),]
+# copy mean values into new columne and make them nominal
+nominalMean <- conf$Max
+nominalMean[nominalMean <= 0.1] <- 0.1
+nominalMean[nominalMean <= 0.2 & nominalMean >0.1] <- 0.2
+nominalMean[nominalMean <= 0.3 & nominalMean >0.2] <- 0.3
+nominalMean[nominalMean <= 0.4 & nominalMean >0.3] <- 0.4
+nominalMean[nominalMean <= 0.5 & nominalMean >0.4] <- 0.5
+nominalMean[nominalMean <= 0.6 & nominalMean >0.5] <- 0.6
+nominalMean[nominalMean <= 0.7 & nominalMean >0.6] <- 0.7
+nominalMean[nominalMean <= 0.8 & nominalMean >0.7] <- 0.8
+nominalMean[nominalMean <= 0.9 & nominalMean >0.8] <- 0.9
+nominalMean[nominalMean <= 1.0 & nominalMean >0.9] <- 1.0
+conf <- cbind(conf, nominalMean)
+
+mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, maxAnticodonNumb = conf$maxAnticodonNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, mean = conf$nominalMean)
+
+
+#nominalConf <- lapply(conf$Mean, fun)
+
+#nicePart <- config[codonNumb == 24][geneNumb == 30][Mean > 0.2]
+
+#nominalConf <- lapply(nicePart[c(1:length(nicePart))]$Mean, fun)
+
+#conf[which(config$Mean >= 0.1)]
+
+#conf$Mean <= 0.1
+
+fwrite(mainData, "G:/Hanna/mainData.csv")
+```
+
+
+
+
+
+
+
+
 
