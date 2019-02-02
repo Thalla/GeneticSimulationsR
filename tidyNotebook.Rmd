@@ -23,66 +23,131 @@ colnames(configLongRun) <- c("translationType", "mrnaSeed", "codonNumb", "geneLe
 
 ```
 
-
-```{r read all data}
+```{r init libraries}
 library(flextable)
+library(data.table)
+library(igraph)
+library(descr)
+```
 
 
-fitness <- c()
+```{r init base variables}
 config <- c()
+fitness <- c()
+fitnessPaths <- c()
+```
 
 
-  # read config
+```{r read data}
+newConfig <- c()
+newFitness <- c()
+counted <- data.table()
+fitnessIds <- c()
+lengths <- c()
+values <- c()
+
+# read config
   basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_affinity/"
-  configPath1 <- paste(basePath, "config.csv", sep = "")
+  configPath1 <- paste(basePath, "config_64_48_3_2.csv", sep = "")
   basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_random/"
-  configPath2 <- paste(basePath, "config.csv", sep = "")
+  #configPath2 <- paste(basePath, "config.csv", sep = "")
   basePath <- "G:/Hanna/SimulationTree/selection_false/translMethod_max/"
-  configPath3 <- paste(basePath, "config.csv", sep = "")
-  configPath <- rbind(configPath1, configPath2, configPath3)
-  config <- apply(configPath, FUN = function(path){data.table::fread(path)}, MARGIN = 1)
+  #configPath3 <- paste(basePath, "config.csv", sep = "")
+  #configPath <- rbind(configPath1, configPath2, configPath3)
+  #newConfig <- apply(configPath, FUN = function(path){data.table::fread(path)}, MARGIN = 1)
+  newConfig <- data.table::fread(configPath1)
   
   # set column names
-  colnames(config) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
-  #get paths
-  outputPath <- paste(config$livingAarsDir, paste("output_s", config$outputSeed, sep = ""), sep = "")
-  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
-  # read fitness values from paths
-  fitness <- c()
-  for(row in 1:length(fitnessPaths)){
-    fitness[row] <- data.table::fread(fitnessPaths[row])
-    fitness[row] <- tail(fitness[row], length(fitness[row])-20)
-  }
-
-
-
-
-#data.table("translationType" = "affinity", config)
-# set config ids
-  #ids <- c(1:nrow(config))
-  #config <- cbind(ids, config)
-#config <- data.table::fread(configPath)
+  colnames(newConfig) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "mrnaId", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
   
+  #get fitness paths
+  outputPath <- paste(newConfig$livingAarsDir, paste("output_s", newConfig$outputSeed, sep = ""), sep = "")
+  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
+  
+  # read fitness values from paths
+  fitnessPathsLength <- length(fitnessPaths)
+  fPathsToProcess <- fitnessPaths
+  maxToTake <- 46080
+  if (fitnessPathsLength > maxToTake){
+    fPathsToProcess <- head(fitnessPaths, maxToTake)
+    fitnessPaths <- tail(fitnessPaths, fitnessPathsLength - maxToTake)
+  }
+  indices <- c(1:length(fPathsToProcess))
+  newFitness <- sapply(indices, FUN = function (pos){data.table::fread(fPathsToProcess[pos])})
+  fitness <- c(fitness, newFitness)
+  
+  
+  indices <- c(1:length(fitnessPaths))
+  fitness <- sapply(indices, FUN = function(path){data.table::fread(fitnessPaths[path])})
+  #summarize fitness data
+  descrStatistics <- sapply(fitness, FUN = function(values){summary(values)})
+  descrStatistics <- data.table(t(descrStatistics))
+  #
+  notNullValues <- sapply(indices, FUN = function(value){length(which(fitness[value] > 0))})
+  
+  
+  for(row in (length(fitness)+1):(length(fitness)+length(fitnessPaths))){
+    fitness[row] <- data.table::fread(fitnessPaths[row])
+    fitnessValues <- fitness[[row]]
+    # count number of generations that the cell lived
+    notNullValues <- length(which(fitnessValues > 0))
 
-  #mRNA_s2000_c64_gl3_gn22_#1/initAaNumb_20/similar_true/aaRS_s200_ac6_lt10/livingAars_n22_s20/output_s1/codeTableFitness.csv")
+    # if cell didn't die
+    if(notNullValues == length(fitnessValues)){
+      # check if there are repetitive values
+      rleResult <- rle(fitnessValues)
+      fitnessIds <- row
+      lengths[row] <- rleResult$lengths
+      values[row] <- rleResults$values
+      
+      #counted$values[counted$lengths != 1]
+      fitness[[row]] <- tail(fitnessValue, length(fitnessValue)-20)
+    }else{
+      fitness[[row]] <- fitnessValues[which(fitnessValues > 0)]
+    }
+  }
+  counted <- data.table("fitnessIds" = fitnessIds, "lengths" = lengths, "values" = values)
 
 
+  # add summary
+  sum <- c()
+  for(row in 1:length(fitness)){
+    sum <- rbind(sum, summary(fitness[[row]]))
+  }
+newConfig <- cbind(newConfig, sum)
+#newConfig <- cbind(data.table("ids" = (length(config)+1):((length(config)+1)+nrow(newConfig))), newConfig)
+
+```
+```{r add new data}
+config <- rbind(newConfig)
+
+```
+
+```{r graph}
+graphData <- unique(data.table("h" = newConfig$initAaNumb, "m" = newConfig$codonNumb))
+graphData <- as.matrix(graphData)
+graphData <- graph.edgelist(graphData)
+V(graphData) # vertices
+E(graphData) # edges
+gsize(graphData) # number of edges
+gorder(graphData) # number of vertices
+plot(graphData)
+plot(induced_subgraph(graphData, c(3,4,8,10,16,20, 48,64,1,2,5)))
+plot(induced_subgraph(graphData, c(48,64, 20, 16,8)))
+set_vertex_attr(graphData, "initAaNumb", value = newConfig$initAaNumb)
+set_vertex_attr(graphData, "codonNumb", value = newConfig$codonNumb)
+vertex_attr(graphData)
+```
 
 
- 
+```{r}
+maxMeans_64 <- conf[conf$Mean == max(conf$Mean)]
+meanIsMedian_64_not0or1 <-  config[config$Mean == config$Median & config$Mean != 0.0 & config$Mean != 1.0]
+meanIsMedian_64_0 <-  config[config$Mean == config$Median & config$Mean == 0.0]
+meanIsMedian_64_1 <- config[config$Mean == config$Median & config$Mean == 1.0]
+plot(meanIsMedian_64_0$Mean, fitness[[meanIsMedian_64_0$ids]])
 
-
-sum <- c()
-for(row in 1:length(fitness)){
-  sum <- rbind(sum, summary(fitness[[row]]))
-}
-
-configRandom <- cbind(configRandom, sum)
-
-
-
-
-
+fitness[meanIsMedian_64_1$ids]
 ```
 
 ```{r}
@@ -207,7 +272,6 @@ chisq.test(data, norm)
 
 ```{r}
 # for WEKA
-library(data.table)
 conf <- config[which(config$codonNumb == 64)]
 #nominalMeans <- config$Mean >
 mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, maxAnticodonNumb = conf$maxAnticodonNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, mean = conf$Mean)
@@ -247,7 +311,8 @@ nominalMean[nominalMean <= 0.9 & nominalMean >0.8] <- 0.9
 nominalMean[nominalMean <= 1.0 & nominalMean >0.9] <- 1.0
 conf <- cbind(conf, nominalMean)
 
-mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, maxAnticodonNumb = conf$maxAnticodonNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, mean = conf$nominalMean)
+
+mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, maxAnticodonNumb = conf$maxAnticodonNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, mean = conf$Mean)
 
 
 #nominalConf <- lapply(conf$Mean, fun)
@@ -260,7 +325,7 @@ mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, s
 
 #conf$Mean <= 0.1
 
-fwrite(mainData, "G:/Hanna/mainData.csv")
+fwrite(mainData, "G:/Hanna/data_affinity_64_numericMean.csv")
 ```
 
 
