@@ -77,20 +77,105 @@ values <- c()
   fitness <- c(fitness, newFitness)
   
   
-  indices <- c(1:length(fitnessPaths))
-  fitness <- sapply(indices, FUN = function(path){data.table::fread(fitnessPaths[path])})
   #summarize fitness data
-  descrStatistics <- sapply(fitness, FUN = function(values){summary(values)})
+  indices <- c(1:length(fitness))
+  descrStatistics <- sapply(indices, FUN = function(pos){summary(fitness[[pos]])})
   descrStatistics <- data.table(t(descrStatistics))
-  #
-  notNullValues <- sapply(indices, FUN = function(value){length(which(fitness[value] > 0))})
   
+  #add descriptive statistics to newConfig
+  newConfig <- cbind(descrStatistics, newConfig)
   
-  for(row in (length(fitness)+1):(length(fitness)+length(fitnessPaths))){
-    fitness[row] <- data.table::fread(fitnessPaths[row])
-    fitnessValues <- fitness[[row]]
-    # count number of generations that the cell lived
-    notNullValues <- length(which(fitnessValues > 0))
+  #count number of generations that the cell lived
+  notNullValues <- sapply(indices,FUN =  function(pos){length(which((fitness[[pos]] > 0) == TRUE))})
+  newConfig <- cbind(notNullValues, newConfig)
+  
+  #add numberof simulation steps per param combination
+  simulationSteps <- sapply(indices, FUN = function(pos){length(fitness[[pos]])})
+  newConfig <- cbind(simulationSteps, newConfig)
+
+  max(newConfig$notNullValue[which(newConfig$simulationSteps != newConfig$notNullValues)])
+  newConfig[which(newConfig$notNullValues == 99555)]
+  plot(unique(newConfig$notNullValue[which(newConfig$simulationSteps != newConfig$notNullValues)]))
+  rle(newConfig$notNullValues[which(newConfig$notNullValues == newConfig$aarsLifeticksStartValue & newConfig$simulationSteps != newConfig$notNullValues)])
+  # set up the plot 
+plot(c(2000:100000), c(2000:100000), type="n", xlab="Age (days)",
+     ylab="Circumference (mm)" ) 
+    lines(newConfig$simulationSteps,newConfig$notNullValues, type="b", lwd=1.5) 
+    hist(newConfig$notNullValues[which(newConfig$notNullValues< 1000)])
+    
+    hist(newConfig$notNullValues[which(newConfig$notNullValues< 50 & newConfig$notNullValues > 0)], breaks = 50, col = c("darkGreen", "red"))
+    
+    newConfig$geneNumb <- factor(newConfig$geneNumb, ordered = TRUE)
+    table(newConfig$geneNumb)
+    barplot(table(newConfig$geneNumb))
+    
+    summary(newConfig)
+    
+    plot(factor(newConfig$geneNumb), newConfig$Mean)
+    
+    
+    
+    
+par(mfrow=c(1,1)) # all plots on one page 
+ plot(factor(newConfig$livingAarsStartNumb), newConfig$Mean)
+ plot(factor(newConfig$aarsLifeticksStartValue), newConfig$Mean)
+ plot(factor(newConfig$codonNumb), newConfig$Mean)
+ plot(factor(newConfig$geneNumb), newConfig$Mean)
+ plot(factor(newConfig$initAaNumb), newConfig$Mean)
+ plot(factor(newConfig$maxAnticodonNumb), newConfig$Mean)
+ plot(factor(newConfig$similarAars), newConfig$Mean)
+ plot(factor(newConfig$simulationSteps), newConfig$Mean)
+ 
+ 
+ 
+boxplot(newConfig$Mean ~ factor(newConfig$geneNumb))
+means <- by(newConfig$Mean, factor(newConfig$geneNumb), mean) 
+points(1:8, means, pch = 10, cex = 0.75, bg = "red")
+text(1:8 - 0.5, means, labels = formatC(means, format = "f", digits = 2), pos = 4, cex = 0.9, col = "red")
+ 
+
+
+
+# Create Line Chart
+
+# convert factor to numeric for convenience 
+factor1 <- as.numeric(factor(newConfig$codonNumb))
+ntrees <- max(factor1)
+
+# get the range for the x and y axis 
+xrange <- range(newConfig$Mean) 
+yrange <- range(newConfig$livingAarsStartNumb) 
+
+# set up the plot 
+plot(xrange, yrange, type="n", xlab="Mean",
+   ylab="livingAarsStartNumb" ) 
+colors <- rainbow(ntrees) 
+linetype <- c(1:ntrees) 
+plotchar <- seq(18,18+ntrees,1)
+
+# add lines 
+for (i in 1:ntrees) { 
+  tree <- subset(newConfig, factor1==i) 
+  lines(tree$Mean, tree$livingAarsStartNumb, type="o", lwd=1.5,
+    lty=linetype[i], col=colors[i], pch=plotchar[i]) 
+} 
+
+# add a title and subtitle 
+title("Tree Growth", "example of line plot")
+
+# add a legend 
+legend(xrange[1], yrange[2], levels(factor(newConfig$codonNumb)), cex=0.8, col=colors,
+   pch=plotchar, lty=linetype, title="Tree")
+
+
+
+
+
+
+
+
+
+
 
     # if cell didn't die
     if(notNullValues == length(fitnessValues)){
