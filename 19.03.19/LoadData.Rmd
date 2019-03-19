@@ -1,0 +1,153 @@
+---
+title: "Load Data"
+output: html_notebook
+---
+
+```{r init libraries, include=FALSE}
+library(data.table)
+library(summarytools)
+```
+
+```{r init base variables, eval=FALSE, include=FALSE}
+config <- c()
+originalFitnessData <- c()
+fitness <- c()
+```
+
+```{r read config data, eval=FALSE, include=FALSE}
+  # @before set path to config file
+  basePath <- "G:/Hanna/SimulationTree/selection_false/ANOVA/translMethod_random/"
+  configPath <- paste(basePath, "config.csv", sep = "")
+  
+  # read config
+  newConfig <- c()
+  newConfig <- data.table::fread(configPath)
+  
+  # set column names 
+  colnames(newConfig) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+  
+  # delete gene lengths because it is always three
+  newConfig$geneLength <- NULL
+  # delete addToOutput because it is not relevant for the data analysis
+  newConfig$addToOutput <- NULL
+  
+```
+
+```{r Summarize Out, 6 params + pre conditions, eval=FALSE, include=FALSE}
+# CAUTION: Take reducedConfig and put it in new variable
+
+ reducedConfig <- newConfig
+ config <- newConfig
+
+ reducedConfig$aarsPath <- NULL
+ reducedConfig$mrnaPath <- NULL
+ reducedConfig$livingAarsPath <- NULL
+ reducedConfig$livingAarsDir <- NULL
+ reducedConfig$outputSeed <- NULL
+ reducedConfig <- unique(reducedConfig)
+ 
+ summarizeByOutputSeed <- function (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10){
+   config$mean[which(config$translationType == p1 & config$mrnaSeed == p2 & config$codonNumb == p3 & config$geneNumb == p4 & config$initAaNumb == p5 & config$similarAars == p6 & config$maxAnticodonNumb == p7 & config$aarsLifeticksStartValue == p8 & config$livingAarsStartNumb == p9 & config$livingAarsSeed == p10)]
+ }
+ 
+ outputMeansOrdered <- sapply(1:nrow(reducedConfig), FUN = function(pos){i <- reducedConfig[pos,]; summarizeByOutputSeed(i[[1]], i[[2]], i[[3]], i[[4]], i[[5]], i[[6]], i[[7]], i[[8]], i[[9]], i[[10]])})
+ 
+ #outputMeansOrdered <- split(as.vector(outputMeansOrdered), seq(nrow(reducedConfig)))
+ 
+ meansOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){mean(outputMeansOrdered[[pos]])})
+ 
+ normalityTestPValue <- sapply(1: length(outputMeansOrdered), FUN = function (pos) {(shapiro.test(outputMeansOrdered[[pos]]))$p.value})
+ 
+ reducedConfig = cbind(reducedConfig, meansOfOutputMeans)
+```
+
+```{r tidy fitness data and extend config, eval=FALSE, include=FALSE}
+newFitness <- c()
+fitnessPaths <- c()
+  
+  #get fitness paths
+  outputPath <- paste(newConfig$livingAarsDir, paste("output_s", newConfig$outputSeed, sep = ""), sep = "")
+  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
+  
+  # read fitness values from paths
+  fitnessPathsLength <- length(fitnessPaths)
+  fPathsToProcess <- fitnessPaths
+  # maxToTake defines how many paths are read 
+  maxToTake <- length(fitnessPaths)
+  if (fitnessPathsLength > maxToTake){
+    fPathsToProcess <- head(fitnessPaths, maxToTake) # paths that will be read
+    fitnessPaths <- tail(fitnessPaths, fitnessPathsLength - maxToTake) # rest of the paths
+  }
+  indices <- c(1:length(fPathsToProcess))
+  newFitness <- sapply(indices, FUN = function (pos){tryCatch(fread(fPathsToProcess[pos]))})
+  originalFitnessData <- c(originalFitnessData, newFitness)
+  
+  # tidy up workspace
+  rm(fitnessPaths)
+  rm(fitnessPathsLength)
+  rm(newFitness)
+  rm(outputPath)
+  rm(maxToTake)
+  rm(basePath)
+  rm(fPathsToProcess)
+  rm(configPath)
+  
+  #add number of simulation steps 
+  indices <- c(1:length(originalFitnessData))
+  simulationSteps <- sapply(indices, FUN = function(pos){length(originalFitnessData[[pos]])})
+  newConfig <- cbind(simulationSteps, newConfig) 
+  rm(simulationSteps)
+  
+  #delete all 0.0 fitness values in fitness data
+  fitness <- originalFitnessData
+  fitness <- sapply(indices,FUN =  function(pos){fitness[[pos]][which(fitness[[pos]] > 0)]})
+  
+  #count number of generations that the cell lived
+  notNullValues <- sapply(indices,FUN =  function(pos){length(fitness[[pos]])})
+  newConfig <- cbind(notNullValues, newConfig)
+  rm(notNullValues)
+  
+  #summarize fitness data
+  indices <- c(1:length(fitness))
+  descrStatistics <- sapply(indices, FUN = function(pos){descr(fitness[[pos]], style = "rmarkdown", stats = c("mean", "sd", "min", "q1", "med", "q3", "max", "mad", "iqr", "cv", "skewness", "se.skewness", "kurtosis"))})
+  descrStatistics <- data.table(t(descrStatistics))
+  colnames(descrStatistics) <- c("mean", "sd", "min", "q1", "med", "q3", "max", "mad", "iqr", "cv", "skewness", "se.skewness", "kurtosis")
+  
+  
+  
+  # mean over all outputs with same params but different output seed
+   reducedConfig <- newConfig
+ config <- newConfig
+
+ reducedConfig$aarsPath <- NULL
+ reducedConfig$mrnaPath <- NULL
+ reducedConfig$livingAarsPath <- NULL
+ reducedConfig$livingAarsDir <- NULL
+ reducedConfig$outputSeed <- NULL
+ reducedConfig <- unique(reducedConfig)
+ 
+ summarizeByOutputSeed <- function (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10){
+   config$mean[which(config$translationType == p1 & config$mrnaSeed == p2 & config$codonNumb == p3 & config$geneNumb == p4 & config$initAaNumb == p5 & config$similarAars == p6 & config$maxAnticodonNumb == p7 & config$aarsLifeticksStartValue == p8 & config$livingAarsStartNumb == p9 & config$livingAarsSeed == p10)]
+ }
+ 
+ outputMeansOrdered <- sapply(1:nrow(reducedConfig), FUN = function(pos){i <- reducedConfig[pos,]; summarizeByOutputSeed(i[[1]], i[[2]], i[[3]], i[[4]], i[[5]], i[[6]], i[[7]], i[[8]], i[[9]], i[[10]])})
+ 
+ #outputMeansOrdered <- split(as.vector(outputMeansOrdered), seq(nrow(reducedConfig)))
+ 
+ meansOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){mean(outputMeansOrdered[[pos]])})
+ 
+ reducedConfig = cbind(reducedConfig, meansOfOutputMeans)
+  
+  
+  
+  
+  
+  
+  
+  newConfig <- cbind(descrStatistics, newConfig)
+  
+  config <- rbind(config, newConfig)
+
+  rm(newConfig)
+  rm(descrStatistics)
+```

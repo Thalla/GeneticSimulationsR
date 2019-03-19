@@ -1,0 +1,126 @@
+---
+title: "Anova Notebook"
+output: html_notebook
+---
+
+**Overview**
+- load libraries
+- load saved data and give overview
+
+```{r}
+library(data.table)
+library(summarytools)
+library(ggplot2)
+```
+
+```{r}
+load("G:/Hanna/R/ANOVA/config6FactL2029Out0110L2529Out1120RandL2024Out0110.RData")
+config = config6FactL2029Out0110L2529Out1120RandL2024Out0110
+```
+
+```{r print levels of data}
+data = config
+
+levelsOfData = function (x){
+  levels(factor(x))
+}
+levelsOfData(data$translationType)
+levelsOfData(data$mrnaSeed)
+levelsOfData(data$codonNumb)
+levelsOfData(data$geneNumb)
+levelsOfData(data$geneNumb)
+levelsOfData(data$initAaNumb)
+levelsOfData(data$similarAars)
+levelsOfData(data$maxAnticodonNumb)
+levelsOfData(data$aarsLifeticksStartValue)
+levelsOfData(data$livingAarsStartNumb)
+levelsOfData(data$livingAarsSeed)
+levelsOfData(data$outputSeed)
+
+```
+
+```{r test for normal distribution}
+# affinity vs. random 
+anvSet1 <- config[which(livingAarsSeed <= 24 & outputSeed <= 10)]  
+data <- anvSet1$mean[which(anvSet1$translationType == "random")]
+norm <- rnorm(length(data), mean(data), sd(data))
+chisq.test(data, norm)
+
+data <- anvSet1$mean[which(anvSet1$translationType == "affinity")]
+norm <- rnorm(length(data), mean(data), sd(data))
+chisq.test(data, norm)
+
+# Anova for translation type affinity vs. random
+anovaResult <- aov(anvSet1$mean ~ factor(translationType), data = anvSet1)
+# summary, boxplot and t-test
+summary(anovaResult)
+boxplot(anvSet1$mean ~ factor(translationType), data = anvSet1)
+t.test(anvSet1$mean[which(anvSet1$livingAarsSeed <= 24 & anvSet1$outputSeed <= 10 & anvSet1$translationType == "affinity")], anvSet1$mean[which(anvSet1$livingAarsSeed <= 24 & anvSet1$outputSeed <= 10 & anvSet1$translationType == "random")])
+
+# Anova for translatin type affinity vs. random with living cells
+anovaResult <- aov(anvSet1$mean ~ factor(translationType), data = anvSet1)
+# summary, boxplot and t-test
+summary(anovaResult)
+boxplot(anvSet1$mean ~ factor(translationType), data = anvSet1)
+t.test(anvSet1$mean[which(anvSet1$livingAarsSeed <= 24 & anvSet1$outputSeed <= 10 & anvSet1$translationType == "affinity")], anvSet1$mean[which(anvSet1$livingAarsSeed <= 24 & anvSet1$outputSeed <= 10 & anvSet1$translationType == "random")])
+
+
+# post hoc
+TukeyHSD(anovaResult)
+
+
+# Anova with all
+anovaResult <- aov(mean ~ factor(translationType) + factor(initAaNumb) + factor(geneNumb) + factor(aarsLifeticksStartValue) + factor(livingAarsStartNumb) + factor(livingAarsSeed) + factor(similarAars), data = anvSet1)
+summary(anovaResult)
+TukeyHSD(anovaResult)
+# livingAarsSeed 20-21 is not significant as well as aarsLifeticksStartValue 2-5
+# test aarsLifeticksStartvalue 2-5
+anvSet2 <- config[which(livingAarsSeed <= 24 & outputSeed <= 10 & (aarsLifeticksStartValue == 2 | aarsLifeticksStartValue == 5))]   
+anovaResult <- aov(mean ~ factor(translationType) + factor(initAaNumb) + factor(geneNumb) + factor(aarsLifeticksStartValue) + factor(livingAarsStartNumb) + factor(livingAarsSeed) + factor(similarAars), data = anvSet2)
+# summary, boxplot
+summary(anovaResult)
+TukeyHSD(anovaResult)   
+
+anovaResult <- aov(mean ~ factor(translationType) + factor(initAaNumb) + factor(aarsLifeticksStartValue), data = anvSet2)
+# summary, boxplot
+summary(anovaResult)
+TukeyHSD(anovaResult)
+
+anovaResult <- aov(mean ~ factor(aarsLifeticksStartValue), data = anvSet2)
+# summary, boxplot
+summary(anovaResult)
+tuc <- TukeyHSD(anovaResult)
+
+tuc <- tuc$`factor(aarsLifeticksStartValue)` 
+
+
+anovaResult <- aov(mean ~ factor(initAaNumb) + factor(geneNumb) + factor(aarsLifeticksStartValue) + factor(livingAarsStartNumb) + factor(similarAars), data = anovaData)
+
+anovaResult <- aov(mean ~  factor(aarsLifeticksStartValue), data = anvSet1)
+
+plot(anovaResult$residuals, col = anvSet1$initAaNumb)
+plot(anovaResult, col = anvSet1$initAaNumb)
+
+anvSet2 <- config[which(livingAarsSeed == 20)]
+colourPlots <- list(config, anvSet2)
+```
+
+```{r boxplot}
+plotBoxes = function (x,y, title){
+boxes <- boxplot(x ~  factor(y), col = "yellow")
+title(title)
+
+mn.t <- tapply(x, y, mean)
+sd.t <- tapply(x, y, sd)
+xi <- seq(boxes$n)
+points(xi, mn.t, col = "blue", pch = 18)
+arrows(xi, mn.t - sd.t, xi, mn.t + sd.t,
+       code = 3, col = "blue", angle = 75, length = .1)
+}
+plotBoxes(anvSet1$mean,anvSet1$aarsLifeticksStartValue, "Comparing fitness of various lifeticks start values")
+
+
+
+
+```
+
