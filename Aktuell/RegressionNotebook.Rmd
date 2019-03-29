@@ -1,0 +1,27 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+source("functions.R")
+config <- Sys.getenv(config)
+i <- Sys.getenv(config$initAaNumb)
+```
+
+
+#Regression
+
+###Regressions
+####initial number of amino acids
+`r regression(config$notNullValues)`
+`r regression(config$simulationSteps)`
+`r regression(config$codonNumb)`
+`r regression(config$geneNumb)`
+`r regression(config$initAaNumb)`
+`r regression(config$similarAars)`
+`r regression(config$maxAnticodonNumb)`
+`r regression(config$aarsLifeticksStartValue)`
+`r regression(config$livingAarsStartNumb)`

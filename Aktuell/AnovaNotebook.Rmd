@@ -1,0 +1,166 @@
+---
+title: "Anova Notebook"
+output: html_notebook
+---
+
+```{r init libraries, include=FALSE}
+library(data.table)
+library(summarytools)
+library(ggplot2)
+```
+
+```{r init base variables, eval=FALSE, include=FALSE}
+config <- c()
+originalFitnessData <- c()
+fitness <- c()
+```
+
+```{r read config data, eval=FALSE, include=FALSE}
+# read config
+  basePath <- "G:/Hanna/SimulationTree/selection_false/ANOVA/translMethod_affinity/"
+  configPath <- paste(basePath, "config.csv", sep = "")
+  
+  newConfig <- c()
+  newConfig <- data.table::fread(configPath)
+  
+  # set column names 
+  colnames(newConfig) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+  
+  
+```
+
+```{r tidy data, eval=FALSE, include=FALSE}
+newFitness <- c()
+fitnessPaths <- c()
+
+  # delete gene lengths because it is always three
+  newConfig$geneLength <- NULL
+  # delete addToOutput because it is not relevant for the data analysis
+  newConfig$addToOutput <- NULL
+  
+  #get fitness paths
+  outputPath <- paste(newConfig$livingAarsDir, paste("output_s", newConfig$outputSeed, sep = ""), sep = "")
+  fitnessPaths <- paste(outputPath, "codeTableFitness.csv", sep = "\\")
+  
+  # read fitness values from paths
+  fitnessPathsLength <- length(fitnessPaths)
+  fPathsToProcess <- fitnessPaths
+  # maxToTake defines how many paths are read 
+  maxToTake <- length(fitnessPaths)
+  if (fitnessPathsLength > maxToTake){
+    fPathsToProcess <- head(fitnessPaths, maxToTake) # paths that will be read
+    fitnessPaths <- tail(fitnessPaths, fitnessPathsLength - maxToTake) # rest of the paths
+  }
+  indices <- c(1:length(fPathsToProcess))
+  newFitness <- sapply(indices, FUN = function (pos){tryCatch(fread(fPathsToProcess[pos]))})
+  originalFitnessData <- c(originalFitnessData, newFitness)
+  
+  # tidy up workspace
+  rm(fitnessPaths)
+  rm(fitnessPathsLength)
+  rm(newFitness)
+  rm(outputPath)
+  rm(maxToTake)
+  rm(basePath)
+  rm(fPathsToProcess)
+  rm(configPath)
+  
+  #add number of simulation steps 
+  indices <- c(1:length(originalFitnessData))
+  simulationSteps <- sapply(indices, FUN = function(pos){length(originalFitnessData[[pos]])})
+  newConfig <- cbind(simulationSteps, newConfig) 
+  rm(simulationSteps)
+  
+  #delete all 0.0 fitness values in fitness data
+  fitness <- originalFitnessData
+  fitness <- sapply(indices,FUN =  function(pos){fitness[[pos]][which(fitness[[pos]] > 0)]})
+  
+  #count number of generations that the cell lived
+  notNullValues <- sapply(indices,FUN =  function(pos){length(fitness[[pos]])})
+  newConfig <- cbind(notNullValues, newConfig)
+  rm(notNullValues)
+  
+  #summarize fitness data
+  indices <- c(1:length(fitness))
+  descrStatistics <- sapply(indices, FUN = function(pos){descr(fitness[[pos]], style = "rmarkdown", stats = c("mean", "sd", "min", "q1", "med", "q3", "max", "mad", "iqr", "cv", "skewness", "se.skewness", "kurtosis"))})
+  descrStatistics <- data.table(t(descrStatistics))
+  colnames(descrStatistics) <- c("mean", "sd", "min", "q1", "med", "q3", "max", "mad", "iqr", "cv", "skewness", "se.skewness", "kurtosis")
+  newConfig <- cbind(descrStatistics, newConfig)
+  rm(newConfig)
+  rm(descrStatistics)
+  
+  config <- rbind(config, newConfig)
+
+  
+```
+
+```{r write descriptive statistics to file, eval=FALSE, include=FALSE}
+attach(config)
+statsToPrint <- data.table(mean, sd, min, q1, med, q3, max, mad, iqr, cv, skewness, se.skewness, kurtosis, notNullValues, simulationSteps)
+colnames(statsToPrint) <- c("mean", "sd", "min", "q1", "med", "q3", "max", "mad", "iqr", "cv", "skewness", "se.skewness", "kurtosis", "notNullValues", "simulationSteps")
+fwrite(statsToPrint, "G:/Hanna/stats_64_172023aa_ 10outSeed_5livingSeed.csv")
+rm(statsToPrint)
+detach(config)
+```
+
+
+```{r regression models, eval=FALSE, include=FALSE}
+regression <- function (param, paramValues){ 
+mean <- config$mean[which(config$codonNumb == 64)]
+plot(param, mean)
+
+exp.model <- lm(log(mean) ~ param)
+predictedCounts <- predict(exp.model, list(param=paramValues))
+lines(paramValues, predictedCounts, col = "orange", lwd = 3)
+
+paramSquare <- param^2
+quadratic.model <- lm(mean ~ param + paramSquare)
+predictedCounts <- predict(quadratic.model, list(param=paramValues, paramSquare=paramValues^2))
+lines(paramValues, predictedCounts, col = "red", lwd = 3)
+
+linear.model <- lm(mean ~ param)
+predictedCounts <- predict(linear.model, list(param=paramValues))
+lines(paramValues, predictedCounts, col = "darkgreen", lwd = 3)
+
+print("linear model summary")
+print(summary(linear.model))
+print("quadratic model summary")
+print(summary(quadratic.model))
+print("exponential model summary")
+print(summary(exp.model))
+
+}
+
+#meanValues <- seq(0, 1, 0.01)
+
+#regression(config$codonNumb)
+regression(config$geneNumb[which(config$codonNumb == 64)], seq(5, 30, 5))
+regression(config$initAaNumb[which(config$codonNumb == 64)], seq(17, 23, 1))
+regression(config$livingAarsSeed[which(config$codonNumb == 64)], seq(20, 25, 1))
+regression(config$aarsLifeticksStartValue[which(config$codonNumb == 64)], seq(2, 15, 1))
+regression(config$livingAarsStartNumb[which(config$codonNumb == 64)], seq(5, 30, 5))
+
+
+```
+
+
+```{r}
+anovaResult <- aov(config$mean ~ factor(config$initAaNumb) + factor(config$geneNumb) + factor(config$aarsLifeticksStartValue) + factor(config$livingAarsStartNumb) + factor(config$livingAarsSeed) + factor(config$similarAars), data = config)
+
+anovaData <- config[which(config$livingAarsSeed == 20)]
+attach(anovaData)
+anovaResult <- aov(mean ~ factor(initAaNumb) + factor(geneNumb) + factor(aarsLifeticksStartValue) + factor(livingAarsStartNumb) + factor(similarAars), data = anovaData)
+detach(anovaData)
+# post hoc
+TukeyHSD(anovaResult)
+plot(anovaResult, col= anovaData$initAaNumb)
+
+lin <- lm(mean ~ factor(initAaNumb) + factor(geneNumb) + factor(aarsLifeticksStartValue) + factor(livingAarsStartNumb) + factor(similarAars), data = anovaData)
+
+anova(lin)
+```
+
+
+
+
+

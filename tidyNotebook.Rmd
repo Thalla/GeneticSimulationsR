@@ -705,6 +705,18 @@ ggplot(theData, aes(codonNumb, livingAarsStartNumb)) +
 ```
 
 
+```{r}
+
+hm <- lm(mean ~ factor(initAaNumb) * factor(aarsLifeticksStartValue) * factor(similarAars) * factor(livingAarsSeed), data = configLiving)
+
+hm$model$mean
+
+
+boxplot(mean ~ factor(initAaNumb) * factor(aarsLifeticksStartValue) * factor(similarAars) * factor(livingAarsSeed), data = configLiving)
+means <- hm$model$mean
+points(1:8, means, pch = 10, cex = 0.75, bg = "red")
+text(1:8 - 0.5, means, labels = formatC(means, format = "f", digits = 2), pos = 4, cex = 0.9, col = "red")
+```
 
 
 

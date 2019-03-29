@@ -6,13 +6,13 @@ output: html_notebook
 ```{r save, eval=FALSE, cache=TRUE, include=FALSE}
 config6FactL2029Out0110L2529Out1120RandL2024Out0110 <- rbind(config6FactL0009Out10L0509Out1120, newConfig)
 
-save(config6FactL2029Out0110L2529Out1120RandL2024Out0110, file = "G:/Hanna/R/ANOVA/config6FactL2029Out0110L2529Out1120RandL2024Out0110.RData") 
+save(config6FactL2029Out0110L2529Out1120RandL2024Out0110, file = "E:/Hanna/R/ANOVA/config6FactL2029Out0110L2529Out1120RandL2024Out0110.RData") 
 #save(fitness6FactorsOut1120, file = "G:/Hanna/R/ANOVA/fitness6FactorsOut1120.RData") 
 
 ```
 
 ```{r load}
-load("G:/Hanna/R/ANOVA/config6FactL2029Out0110L2529Out1120RandL2024Out0110.RData")
+load("E:/Hanna/R/ANOVA/config6FactL2029Out0110L2529Out1120RandL2024Out0110.RData")
 
 # load("G:/Hanna/R/ANOVA/config6FactorsOut1120.RData")
 # load("G:/Hanna/R/ANOVA/config6FactorsOut10.RData")
@@ -24,8 +24,8 @@ load("G:/Hanna/R/ANOVA/config6FactL2029Out0110L2529Out1120RandL2024Out0110.RData
 fitnessRandL2024Out0110 <- fitness
 originalFitnessRandL2024Out0110 <- originalFitnessData
 
-save(fitnessRandL2024Out0110, file= "G:/Hanna/R/ANOVA/RandL2024Out0110.RData")
-save(originalFitnessRandL2024Out0110, file= "G:/Hanna/R/ANOVA/originalFitnessRandL2024Out0110.RData")
+save(fitnessRandL2024Out0110, file= "E:/Hanna/R/ANOVA/RandL2024Out0110.RData")
+save(originalFitnessRandL2024Out0110, file= "E:/Hanna/R/ANOVA/originalFitnessRandL2024Out0110.RData")
 ```
 
 

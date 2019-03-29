@@ -1,0 +1,62 @@
+---
+title: "Stuffy"
+output: html_notebook
+---
+
+```{r init libraries, include=FALSE}
+library(data.table)
+library(summarytools)
+library(ggplot2)
+```
+
+```{r init base variables, eval=FALSE, include=FALSE}
+config <- c()
+originalFitnessData <- c()
+fitness <- c()
+```
+
+```{r read config data, eval=FALSE, include=FALSE}
+# read config
+  basePath <- "G:/Hanna/SimulationTree/selection_false/ANOVA/translMethod_affinity/"
+  configPath <- paste(basePath, "config_64_172023aa_ 1120outSeed_5livingSeed.csv", sep = "")
+  
+  newConfig <- c()
+  newConfig <- data.table::fread(configPath)
+  
+  # set column names 
+  colnames(newConfig) <- c("translationType", "mrnaSeed", "codonNumb", "geneLength", "geneNumb", "initAaNumb", "similarAars", "maxAnticodonNumb", "aarsLifeticksStartValue", "livingAarsStartNumb", "livingAarsSeed", "outputSeed", "addToOutput", "mrnaPath", "aarsPath", "livingAarsPath", "livingAarsDir")
+  
+  # delete gene lengths because it is always three
+  newConfig$geneLength <- NULL
+  # delete addToOutput because it is not relevant for the data analysis
+  newConfig$addToOutput <- NULL
+  
+```
+
+```{r 6 params + pre conditions, eval=FALSE, include=FALSE}
+ # config_64_172023aa_ 10outSeed_5livingSeed.csv
+ reducedConfig <- newConfig
+ reducedConfig$aarsPath <- NULL
+ reducedConfig$mrnaPath <- NULL
+ reducedConfig$livingAarsPath <- NULL
+ reducedConfig$translationType <- NULL
+ reducedConfig$codonNumb <- NULL
+ reducedConfig$mrnaSeed <- NULL
+ reducedConfig$maxAnticodonNumb <- NULL
+ reducedConfig$livingAarsDir <- NULL
+ reducedConfig$outputSeed <- NULL
+ reducedConfig <- unique(reducedConfig)
+ 
+ summarizeByOutputSeed <- function (p1, p2, p3, p4, p5, p6){
+   config$mean[which(config$geneNumb == p1 & config$initAaNumb == p2 & config$similarAars == p3 & config$aarsLifeticksStartValue == p4 & config$livingAarsStartNumb == p5 & config$livingAarsSeed == p6)]
+ }
+ 
+ outputMeansOrdered <- sapply(1:nrow(reducedConfig), FUN = function(pos){i <- reducedConfig[pos]; summarizeByOutputSeed(i[[1]], i[[2]], i[[3]], i[[4]], i[[5]], i[[6]])})
+ 
+ #outputMeansOrdered <- split(as.vector(outputMeansOrdered), seq(nrow(reducedConfig)))
+ 
+ meansOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){mean(outputMeansOrdered[[pos]])})
+ normalityTestPValue <- sapply(1: length(outputMeansOrdered), FUN = function (pos) {(shapiro.test(outputMeansOrdered[[pos]]))$p.value})
+ 
+ reducedConfig = cbind(reducedConfig, meansOfOutputMeans)
+```
