@@ -143,128 +143,6 @@ Table: Table continues below
 
 
 
-```{r WEKA, eval=FALSE, include=FALSE}
-conf <- config
-
-# normal data
-mainData <- data.frame(translationtype = conf$translationType, geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$mean)
-
-# reduced means that the 10 results with same output seed were summarized to one mean
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaReduced_64_172023aa_ 10outSeed_5livingSeed.csv")
-
-# copy mean values into new columne and make them nominal
-nominalMean <- conf$mean
-nominalMean[nominalMean <= 0.1] <- 0.1
-nominalMean[nominalMean <= 0.2 & nominalMean >0.1] <- 0.2
-nominalMean[nominalMean <= 0.3 & nominalMean >0.2] <- 0.3
-nominalMean[nominalMean <= 0.4 & nominalMean >0.3] <- 0.4
-nominalMean[nominalMean <= 0.5 & nominalMean >0.4] <- 0.5
-nominalMean[nominalMean <= 0.6 & nominalMean >0.5] <- 0.6
-nominalMean[nominalMean <= 0.7 & nominalMean >0.6] <- 0.7
-nominalMean[nominalMean <= 0.8 & nominalMean >0.7] <- 0.8
-nominalMean[nominalMean <= 0.9 & nominalMean >0.8] <- 0.9
-nominalMean[nominalMean <= 1.0 & nominalMean >0.9] <- 1.0
-conf <- cbind(conf, nominalMean)
-
-nominalMean <- conf$mean
-nominalMean[nominalMean <= 0.02] <- 0.2
-nominalMean[nominalMean <= 0.04 & nominalMean >0.02] <- 0.04
-nominalMean[nominalMean <= 0.06 & nominalMean >0.04] <- 0.06
-nominalMean[nominalMean <= 0.08 & nominalMean >0.06] <- 0.08
-nominalMean[nominalMean <= 0.1 & nominalMean >0.08] <- 0.1
-nominalMean[nominalMean <= 0.12 & nominalMean >0.1] <- 0.12
-nominalMean[nominalMean <= 0.14 & nominalMean >0.12] <- 0.14
-nominalMean[nominalMean <= 0.16 & nominalMean >0.14] <- 0.16
-nominalMean[nominalMean <= 0.18 & nominalMean >0.16] <- 0.18
-nominalMean[nominalMean <= 0.2 & nominalMean >0.18] <- 0.2
-nominalMean[nominalMean <= 0.22 & nominalMean >0.2] <- 0.22
-nominalMean[nominalMean <= 0.24 & nominalMean >0.22] <- 0.24
-nominalMean[nominalMean <= 0.26 & nominalMean >0.24] <- 0.26
-nominalMean[nominalMean <= 0.28 & nominalMean >0.26] <- 0.28
-nominalMean[nominalMean <= 0.3 & nominalMean >0.28] <- 0.3
-nominalMean[nominalMean <= 0.32 & nominalMean >0.3] <- 0.32
-nominalMean[nominalMean <= 0.34 & nominalMean >0.32] <- 0.34
-nominalMean[nominalMean <= 0.36 & nominalMean >0.34] <- 0.36
-nominalMean[nominalMean <= 0.38 & nominalMean >0.36] <- 0.38
-nominalMean[nominalMean <= 0.4 & nominalMean >0.38] <- 0.4
-nominalMean[nominalMean <= 0.42 & nominalMean >0.4] <- 0.42
-nominalMean[nominalMean <= 0.44 & nominalMean >0.42] <- 0.44
-nominalMean[nominalMean <= 0.46 & nominalMean >0.44] <- 0.46
-nominalMean[nominalMean <= 0.48 & nominalMean >0.46] <- 0.48
-nominalMean[nominalMean <= 0.5 & nominalMean >0.48] <- 0.5
-nominalMean[nominalMean <= 0.52 & nominalMean >0.5] <- 0.52
-conf <- cbind(conf, nominalMean)
-
-
-nominalMean <- conf$mean
-nominalMean[nominalMean <= 0.02] <- "z"
-nominalMean[nominalMean <= 0.04 & nominalMean >0.02] <- "a"
-nominalMean[nominalMean <= 0.06 & nominalMean >0.04] <- "b"
-nominalMean[nominalMean <= 0.08 & nominalMean >0.06] <- "c"
-nominalMean[nominalMean <= 0.1 & nominalMean >0.08] <- "d"
-nominalMean[nominalMean <= 0.12 & nominalMean >0.1] <- "e"
-nominalMean[nominalMean <= 0.14 & nominalMean >0.12] <- "f"
-nominalMean[nominalMean <= 0.16 & nominalMean >0.14] <- "g"
-nominalMean[nominalMean <= 0.18 & nominalMean >0.16] <- "h"
-nominalMean[nominalMean <= 0.2 & nominalMean >0.18] <-"i"
-nominalMean[nominalMean <= 0.22 & nominalMean >0.2] <- "j"
-nominalMean[nominalMean <= 0.24 & nominalMean >0.22] <- "k"
-nominalMean[nominalMean <= 0.26 & nominalMean >0.24] <- "l"
-nominalMean[nominalMean <= 0.28 & nominalMean >0.26] <- "m"
-nominalMean[nominalMean <= 0.3 & nominalMean >0.28] <- "n"
-conf <- cbind(conf, nominalMean)
-
-mainData <- data.frame(translationtype = conf$translationType, geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$nominalMean)
-
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaNominalReduced_64_172023aa_ 10outSeed_5livingSeed.csv")
-
-
-
-# subset: reducedConfig[which(reducedConfig$geneNumb == 30 & reducedConfig$livingAarsStartNumb == 20 & reducedConfig$similarAars == 0)]
-mainData <- data.frame(initAaNumb = conf$initAaNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsSeed = conf$livingAarsSeed, mean = conf$nominalMean)
-
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaNominalReducedSub1_64_172023aa_ 10outSeed_5livingSeed.csv")
-
-# notNullValues instead of mean
-mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, lifespan = conf$notNullValues)
-
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaLifespan_64_172023aa_ 10outSeed_5livingSeed.csv")
-
-
-# copy notNullValues into new columne and make them nominal
-nominal <- conf$notNullValues
-nominal[nominal <= 2] <- 2
-nominal[nominal <= 4 & nominal >2] <- 4
-nominal[nominal <= 5 & nominal >4] <- 5
-nominal[nominal <= 9 & nominal >5] <- 9
-nominal[nominal <= 10 & nominal >9] <- 10
-nominal[nominal <= 14 & nominal >10] <- 14
-nominal[nominal <= 15 & nominal >14] <- 15
-nominal[nominal <= 19 & nominal >15] <- 19
-nominal[nominal <= 20 & nominal >19] <- 20
-nominal[nominal <= 29 & nominal >20] <- 29
-nominal[nominal <= 30 & nominal >29] <- 30
-nominal[nominal <= 100 & nominal >30] <- 100
-nominal[nominal <= 100000 & nominal >100] <- 100000
-conf <- cbind(conf, nominal)
-
-# notNullValues instead of mean
-mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, lifespan = conf$nominal)
-
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaLifespanNom_64_172023aa_ 10outSeed_5livingSeed.csv")
-fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/livingDataNomDetailed.csv")
-fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/livingDataNomDetailedLetters.csv")
-fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/livingDataNomDetailedFirstOneRCorrectInstancesDeleted.csv")
-
-fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/wekaNominal02stepsAllData.csv")
-
-# mean of living set
-conf <- livingSet
-mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$binnedMean)
-
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaLivingNom_64_172023aa_ 10outSeed_5livingSeed.csv")
-
-```
 
 
     -------------------------------------------------------------------------
@@ -461,5 +339,44 @@ paramNumb <- length(paramIndices)
   
   tests(param)
   
+```
+
+
+```{r WEKA, eval=FALSE, include=FALSE}
+conf <- config
+
+nominalMean <- conf$mean
+nominalMean[nominalMean <= 0.02] <- 0.2
+nominalMean[nominalMean <= 0.04 & nominalMean >0.02] <- 0.04
+nominalMean[nominalMean <= 0.06 & nominalMean >0.04] <- 0.06
+nominalMean[nominalMean <= 0.08 & nominalMean >0.06] <- 0.08
+nominalMean[nominalMean <= 0.1 & nominalMean >0.08] <- 0.1
+nominalMean[nominalMean <= 0.12 & nominalMean >0.1] <- 0.12
+nominalMean[nominalMean <= 0.14 & nominalMean >0.12] <- 0.14
+nominalMean[nominalMean <= 0.16 & nominalMean >0.14] <- 0.16
+nominalMean[nominalMean <= 0.18 & nominalMean >0.16] <- 0.18
+nominalMean[nominalMean <= 0.2 & nominalMean >0.18] <- 0.2
+nominalMean[nominalMean <= 0.22 & nominalMean >0.2] <- 0.22
+nominalMean[nominalMean <= 0.24 & nominalMean >0.22] <- 0.24
+nominalMean[nominalMean <= 0.26 & nominalMean >0.24] <- 0.26
+nominalMean[nominalMean <= 0.28 & nominalMean >0.26] <- 0.28
+nominalMean[nominalMean <= 0.3 & nominalMean >0.28] <- 0.3
+nominalMean[nominalMean <= 0.32 & nominalMean >0.3] <- 0.32
+nominalMean[nominalMean <= 0.34 & nominalMean >0.32] <- 0.34
+nominalMean[nominalMean <= 0.36 & nominalMean >0.34] <- 0.36
+nominalMean[nominalMean <= 0.38 & nominalMean >0.36] <- 0.38
+nominalMean[nominalMean <= 0.4 & nominalMean >0.38] <- 0.4
+nominalMean[nominalMean <= 0.42 & nominalMean >0.4] <- 0.42
+nominalMean[nominalMean <= 0.44 & nominalMean >0.42] <- 0.44
+nominalMean[nominalMean <= 0.46 & nominalMean >0.44] <- 0.46
+nominalMean[nominalMean <= 0.48 & nominalMean >0.46] <- 0.48
+nominalMean[nominalMean <= 0.5 & nominalMean >0.48] <- 0.5
+nominalMean[nominalMean <= 0.52 & nominalMean >0.5] <- 0.52
+conf <- cbind(conf, nominalMean)
+
+mainData <- data.frame(translationtype = conf$translationType, geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$nominalMean)
+
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaNominalReduced_64_172023aa_ 10outSeed_5livingSeed.csv")
+
 ```
 
