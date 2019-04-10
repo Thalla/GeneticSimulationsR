@@ -1,0 +1,465 @@
+---
+title: "Anova Notebook"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+**Overview**
+- load libraries
+- load saved data and give overview
+- living dead diagram (output seed <= 10)
+- create subset with high survival rate treatments (10 survivors per treatment)
+
+```{r include=FALSE}
+library(data.table)
+library(pander)
+library(rcompanion)
+library(multcompView)
+panderOptions('knitr.auto.asis', FALSE)
+#library(summarytools)
+library(ggplot2)
+```
+
+```{r}
+load("config6FactL2029Out0120RandAndMaxL2029Out0110.RData")
+config = config6FactL2029Out0120RandAndMaxL2029Out0110
+```
+
+```{r living dead diagram}
+
+configLiving <- config[which(config$notNullValues == 100000 & config$outputSeed <= 10),]
+configDead <- config[which(config$notNullValues < 100000 & config$outputSeed <= 10),]
+
+livingDeadHist = function (living, dead, title){
+deadHist <- hist(dead, plot = FALSE)
+livingHist <- hist(living, plot = FALSE)
+deadCounts <-deadHist$counts
+deadCounts <- deadCounts[which(deadCounts != 0)]
+livingCounts <- livingHist$counts
+livingCounts <- livingCounts[which(livingCounts != 0)]
+
+matrix = matrix(rbind(livingCounts, deadCounts),nrow = 2)
+colnames(matrix)=c(levels(factor(dead)))
+rownames(matrix) = c("living", "dead")
+data_percentage=apply(matrix,2, function(x){x*100/sum(x,na.rm=T)})
+
+print(pander(matrix))
+print(pander(data_percentage))
+barplot(data_percentage, col=c("green", "black") , border="black", xlab= title, cex.names = 1.5, cex.axis = 1.5)
+legend("topright", legend = rownames(matrix), fill=c("green", "black") , ncol = 1, cex = 1.3)
+
+}
+livingTranslationTypes <- c(nrow(configLiving[which(configLiving$translationType == "random"),]), nrow(configLiving[which(configLiving$translationType == "affinity"),]), nrow(configLiving[which(configLiving$translationType == "max"),]))
+deadTranslationTypes <- c(nrow(configDead[which(configDead$translationType == "random"),]), nrow(configDead[which(configDead$translationType == "affinity"),]),nrow(configDead[which(configDead$translationType == "max"),]))
+
+matrix = matrix(rbind(livingTranslationTypes, deadTranslationTypes),nrow = 2)
+colnames(matrix)=c("rand.", "aff.", "max")
+rownames(matrix) = c("living", "dead")
+data_percentage=apply(matrix,2, function(x){x*100/sum(x,na.rm=T)})
+
+print(pander(matrix))
+print(pander(data_percentage))
+
+
+
+par(mfrow = c(2, 4), cex.lab = 1.5, oma = c(5,4,0,0) + 0.1,
+          mar = c(4,1,2,4) + 0.1)
+
+
+barplot(data_percentage, col=c("green", "black") , border="black", xlab= "Translation type", cex.names = 1.5, cex.axis = 1.5)
+legend("topright", legend = rownames(matrix), fill=c("green", "black") , ncol = 1, cex = 1.3)
+
+
+livingDeadHist(configLiving$geneNumb, configDead$geneNumb, "Number of genes")
+livingDeadHist(configLiving$initAaNumb, configDead$initAaNumb, "Amino acids")
+livingDeadHist(configLiving$similarAars, configDead$similarAars, "Similarity of aaRSs")
+livingDeadHist(configLiving$aarsLifeticksStartValue, configDead$aarsLifeticksStartValue, "Lifeticks")
+livingDeadHist(configLiving$livingAarsStartNumb, configDead$livingAarsStartNumb, "Living aaRSs numb.")
+livingDeadHist(configLiving$livingAarsSeed, configDead$livingAarsSeed, "Living aaRSs seed")
+
+
+
+
+```
+
+
+```{r treatments with 10 survivors}
+# @Description 7 parameters are extracted from a config file. The means are collected into lists. Each list consists of the means of one parameter combination (output seeds 1 to 10). Either the mean of those means can be calculated or the means per list are counted (useful in the case of a living or dead data set). Is the unique(reducedConfig) line included the result is a list with one value per parameter combination. Otherwise the list is as long as the config file. One possible case is to choose all rows with parameter combinations that didn't lead to any dead cells.
+# When the extracted parameters shall be different then there have to be some changes made.
+
+lconfig <- configLiving[,c(16, 19:21, 23:25, 1)]
+
+
+# @Before Set config variable. Comment/uncomment unique(reducedConfig) line and decide between means and lengths or both.
+  config <- lconfig
+  reducedConfig <- lconfig[,c(1:7)]  # without mean (needed when unique follows)
+  #reducedConfig <- unique(reducedConfig) #skip this line if resulting list of means or lengths shall have the same length as config.
+
+  summarizeByOutputSeed <- function (p1, p2, p3, p4, p5, p6, p7){
+   config$mean[which(config$translationType == p1 & config$geneNumb == p2 & config$initAaNumb == p3 & config$similarAars == p4 & config$aarsLifeticksStartValue == p5 & config$livingAarsStartNumb == p6 & config$livingAarsSeed == p7)]
+ }
+ 
+ outputMeansOrdered <- sapply(1:nrow(reducedConfig), FUN = function(pos){i <- reducedConfig[pos,]; summarizeByOutputSeed(i[[1]], i[[2]], i[[3]], i[[4]], i[[5]], i[[6]], i[[7]])})
+
+ # meansOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){mean(outputMeansOrdered[[pos]])})
+ 
+ # List of counts of surviving cells per parameter combination
+ lengthsOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){length(outputMeansOrdered[[pos]])})
+ counts <- summary(as.factor(lengthsOfOutputMeans))
+ pander(counts)
+ 
+ par( cex.lab = 1.3, cex.axis = 1.3)
+ hist(lengthsOfOutputMeans[which(lengthsOfOutputMeans != 10)], col = "yellow", labels = TRUE, xlim = c(1,9), ylim=(c(0,700)), xlab="Number of surviving cells per treatment", main ="Histogram on the numbers of surviving cells per treatment")
+  hist(lengthsOfOutputMeans[which(lengthsOfOutputMeans != 10)], col = "yellow", labels = TRUE, xlim = c(1,9), ylim=(c(0,1)), xlab="Number of surviving cells per treatment", main ="Histogram on the numbers of surviving cells per treatment", breaks = c(1,2,3,4,5,6,7,8,9), probability = TRUE)
+ 
+  # Choose all rows of treatments that have 10 surviving cells
+ lconfig <- lconfig[which(lengthsOfOutputMeans == 10)]
+ 
+ 
+par( cex.lab = 1.3, cex.axis = 1.3)
+ hist(lconfig$mean, col = ("yellow"), prob = TRUE, xlim = c(0.05,0.3),xlab= "Mean",  main = "Density histogram of means", labels = TRUE, ylim = (c(0,15)))
+ 
+ qplot(config6FactL2029Out0120RandAndMaxL2029Out0110$mean, y= ..density.., geom = "histogram", binwidth = 0.02) + coord_flip()
+  
+```
+--------------------------------------------------------------------------------
+ affinity.5   max.5   random.5   affinity.10   max.10   random.10   affinity.20 
+------------ ------- ---------- ------------- -------- ----------- -------------
+     50         0        0           730         0          0          3020     
+--------------------------------------------------------------------------------
+
+Table: Table continues below
+
+ 
+-------------------------------------------------------
+ max.20   random.20   affinity.30   max.30   random.30 
+-------- ----------- ------------- -------- -----------
+   0         330         3750         60       1030    
+-------------------------------------------------------
+
+
+
+
+```{r WEKA, eval=FALSE, include=FALSE}
+conf <- config
+
+# normal data
+mainData <- data.frame(translationtype = conf$translationType, geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$mean)
+
+# reduced means that the 10 results with same output seed were summarized to one mean
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaReduced_64_172023aa_ 10outSeed_5livingSeed.csv")
+
+# copy mean values into new columne and make them nominal
+nominalMean <- conf$mean
+nominalMean[nominalMean <= 0.1] <- 0.1
+nominalMean[nominalMean <= 0.2 & nominalMean >0.1] <- 0.2
+nominalMean[nominalMean <= 0.3 & nominalMean >0.2] <- 0.3
+nominalMean[nominalMean <= 0.4 & nominalMean >0.3] <- 0.4
+nominalMean[nominalMean <= 0.5 & nominalMean >0.4] <- 0.5
+nominalMean[nominalMean <= 0.6 & nominalMean >0.5] <- 0.6
+nominalMean[nominalMean <= 0.7 & nominalMean >0.6] <- 0.7
+nominalMean[nominalMean <= 0.8 & nominalMean >0.7] <- 0.8
+nominalMean[nominalMean <= 0.9 & nominalMean >0.8] <- 0.9
+nominalMean[nominalMean <= 1.0 & nominalMean >0.9] <- 1.0
+conf <- cbind(conf, nominalMean)
+
+nominalMean <- conf$mean
+nominalMean[nominalMean <= 0.02] <- 0.2
+nominalMean[nominalMean <= 0.04 & nominalMean >0.02] <- 0.04
+nominalMean[nominalMean <= 0.06 & nominalMean >0.04] <- 0.06
+nominalMean[nominalMean <= 0.08 & nominalMean >0.06] <- 0.08
+nominalMean[nominalMean <= 0.1 & nominalMean >0.08] <- 0.1
+nominalMean[nominalMean <= 0.12 & nominalMean >0.1] <- 0.12
+nominalMean[nominalMean <= 0.14 & nominalMean >0.12] <- 0.14
+nominalMean[nominalMean <= 0.16 & nominalMean >0.14] <- 0.16
+nominalMean[nominalMean <= 0.18 & nominalMean >0.16] <- 0.18
+nominalMean[nominalMean <= 0.2 & nominalMean >0.18] <- 0.2
+nominalMean[nominalMean <= 0.22 & nominalMean >0.2] <- 0.22
+nominalMean[nominalMean <= 0.24 & nominalMean >0.22] <- 0.24
+nominalMean[nominalMean <= 0.26 & nominalMean >0.24] <- 0.26
+nominalMean[nominalMean <= 0.28 & nominalMean >0.26] <- 0.28
+nominalMean[nominalMean <= 0.3 & nominalMean >0.28] <- 0.3
+nominalMean[nominalMean <= 0.32 & nominalMean >0.3] <- 0.32
+nominalMean[nominalMean <= 0.34 & nominalMean >0.32] <- 0.34
+nominalMean[nominalMean <= 0.36 & nominalMean >0.34] <- 0.36
+nominalMean[nominalMean <= 0.38 & nominalMean >0.36] <- 0.38
+nominalMean[nominalMean <= 0.4 & nominalMean >0.38] <- 0.4
+nominalMean[nominalMean <= 0.42 & nominalMean >0.4] <- 0.42
+nominalMean[nominalMean <= 0.44 & nominalMean >0.42] <- 0.44
+nominalMean[nominalMean <= 0.46 & nominalMean >0.44] <- 0.46
+nominalMean[nominalMean <= 0.48 & nominalMean >0.46] <- 0.48
+nominalMean[nominalMean <= 0.5 & nominalMean >0.48] <- 0.5
+nominalMean[nominalMean <= 0.52 & nominalMean >0.5] <- 0.52
+conf <- cbind(conf, nominalMean)
+
+
+nominalMean <- conf$mean
+nominalMean[nominalMean <= 0.02] <- "z"
+nominalMean[nominalMean <= 0.04 & nominalMean >0.02] <- "a"
+nominalMean[nominalMean <= 0.06 & nominalMean >0.04] <- "b"
+nominalMean[nominalMean <= 0.08 & nominalMean >0.06] <- "c"
+nominalMean[nominalMean <= 0.1 & nominalMean >0.08] <- "d"
+nominalMean[nominalMean <= 0.12 & nominalMean >0.1] <- "e"
+nominalMean[nominalMean <= 0.14 & nominalMean >0.12] <- "f"
+nominalMean[nominalMean <= 0.16 & nominalMean >0.14] <- "g"
+nominalMean[nominalMean <= 0.18 & nominalMean >0.16] <- "h"
+nominalMean[nominalMean <= 0.2 & nominalMean >0.18] <-"i"
+nominalMean[nominalMean <= 0.22 & nominalMean >0.2] <- "j"
+nominalMean[nominalMean <= 0.24 & nominalMean >0.22] <- "k"
+nominalMean[nominalMean <= 0.26 & nominalMean >0.24] <- "l"
+nominalMean[nominalMean <= 0.28 & nominalMean >0.26] <- "m"
+nominalMean[nominalMean <= 0.3 & nominalMean >0.28] <- "n"
+conf <- cbind(conf, nominalMean)
+
+mainData <- data.frame(translationtype = conf$translationType, geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$nominalMean)
+
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaNominalReduced_64_172023aa_ 10outSeed_5livingSeed.csv")
+
+
+
+# subset: reducedConfig[which(reducedConfig$geneNumb == 30 & reducedConfig$livingAarsStartNumb == 20 & reducedConfig$similarAars == 0)]
+mainData <- data.frame(initAaNumb = conf$initAaNumb, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsSeed = conf$livingAarsSeed, mean = conf$nominalMean)
+
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaNominalReducedSub1_64_172023aa_ 10outSeed_5livingSeed.csv")
+
+# notNullValues instead of mean
+mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, lifespan = conf$notNullValues)
+
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaLifespan_64_172023aa_ 10outSeed_5livingSeed.csv")
+
+
+# copy notNullValues into new columne and make them nominal
+nominal <- conf$notNullValues
+nominal[nominal <= 2] <- 2
+nominal[nominal <= 4 & nominal >2] <- 4
+nominal[nominal <= 5 & nominal >4] <- 5
+nominal[nominal <= 9 & nominal >5] <- 9
+nominal[nominal <= 10 & nominal >9] <- 10
+nominal[nominal <= 14 & nominal >10] <- 14
+nominal[nominal <= 15 & nominal >14] <- 15
+nominal[nominal <= 19 & nominal >15] <- 19
+nominal[nominal <= 20 & nominal >19] <- 20
+nominal[nominal <= 29 & nominal >20] <- 29
+nominal[nominal <= 30 & nominal >29] <- 30
+nominal[nominal <= 100 & nominal >30] <- 100
+nominal[nominal <= 100000 & nominal >100] <- 100000
+conf <- cbind(conf, nominal)
+
+# notNullValues instead of mean
+mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, lifespan = conf$nominal)
+
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaLifespanNom_64_172023aa_ 10outSeed_5livingSeed.csv")
+fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/livingDataNomDetailed.csv")
+fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/livingDataNomDetailedLetters.csv")
+fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/livingDataNomDetailedFirstOneRCorrectInstancesDeleted.csv")
+
+fwrite(mainData, "C:/Users/feroc/MagentaCLOUD/MasterThesis/WEKA csv/wekaNominal02stepsAllData.csv")
+
+# mean of living set
+conf <- livingSet
+mainData <- data.frame(geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$binnedMean)
+
+fwrite(mainData, "G:/Hanna/R/ANOVA/wekaLivingNom_64_172023aa_ 10outSeed_5livingSeed.csv")
+
+```
+
+
+    -------------------------------------------------------------------------
+      &nbsp;        5:20        5:30        10:10        10:20       10:30
+    ----------- ------------ ----------- ------------ ----------- -----------
+     **5:30**    2.063e-42       NA           NA          NA          NA
+
+     **10:10**   7.447e-30    1.206e-52       NA          NA          NA
+
+     **10:20**   1.846e-89    8.842e-31   9.761e-101      NA          NA
+
+     **10:30**   5.808e-195   4.677e-65   9.394e-193   1.301e-43      NA
+
+     **15:10**   1.343e-24        1       3.658e-31    2.245e-21   3.957e-41
+
+     **15:20**   3.552e-160   1.41e-66    5.711e-172   2.452e-44       1
+
+     **15:30**   2.109e-267   6.043e-75   5.077e-166   4.62e-66    1.323e-55
+    -------------------------------------------------------------------------
+
+    Table: Table continues below
+
+
+    -----------------------------------
+      &nbsp;       15:10       15:20
+    ----------- ----------- -----------
+     **5:30**       NA          NA
+
+     **10:10**      NA          NA
+
+     **10:20**      NA          NA
+
+     **10:30**      NA          NA
+
+     **15:10**      NA          NA
+
+     **15:20**   7.483e-42      NA
+
+     **15:30**   2.151e-48   4.092e-43
+    -----------------------------------
+
+```{r normal distribution and more, echo=FALSE, message=FALSE, warning=FALSE, render="asis"}
+qqnorm(config6FactL2029Out0120RandAndMaxL2029Out0110$mean, main = "Fitness")
+qqline(config6FactL2029Out0120RandAndMaxL2029Out0110$mean)
+
+qqnorm(lconfig$mean, main = "Fitness of surviving cells")
+qqline(lconfig$mean)
+#shapiro.test(lconfig$mean)
+
+#Boxplot lifeticks geneNumb coloured
+par( cex.lab = 1.3, cex.axis = 1.3, cex.main = 1.5)
+boxplot(lconfig$mean~factor(lconfig$aarsLifeticksStartValue)+factor(lconfig$geneNumb), col=c("green", "green", "yellow", "blue", "grey", "red", "yellow", "red", "purple"), main="Boxplot for factor combination lifeticks - geneNumber", ylab="Fitness", xlab="lifeticks.geneNumber")
+
+means <- aggregate(lconfig$mean~(lconfig$aarsLifeticksStartValue:lconfig$geneNumb),lconfig, mean)
+means <- means$`lconfig$mean`
+means <- c(NA,means)
+means
+points(means, bg=par("bg"), pch = 20, col = "black", cex = 1.5)
+text(means+0.015, label=round(means,2), cex = 1.2)
+#text(means+0.011, label=round(means,2), cex = 1.2)
+
+par( cex.lab = 1.3, cex.axis = 1.3)
+par( cex.lab = 0.6, cex.axis = 0.6)
+boxplot(lconfig$mean~factor(lconfig$aarsLifeticksStartValue)+factor(lconfig$geneNumb)+factor(lconfig$similarAars), col=c("green", "green", "yellow", "blue", "grey", "red", "yellow", "red", "purple"), main="Boxplot for factor combination lifeticks - geneNumber - similarity", ylab="Fitness", xlab="lifeticks.geneNumber")
+
+#posthoc for lifeticks geneNumb
+print(pander(pairwise.t.test(lconfig$mean,factor(lconfig$aarsLifeticksStartValue):factor(lconfig$geneNumb), pool.sd = FALSE)))
+
+posthoc <- pairwise.t.test(lconfig$mean,factor(lconfig$aarsLifeticksStartValue):factor(lconfig$geneNumb), pool.sd = FALSE)
+
+
+```
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+paramIndices <- c(4,2,3,5,1)
+print(paramIndices)
+paramNumb <- length(paramIndices)
+  config <- lconfig
+  reducedConfig <- config[,paramIndices, with = FALSE] #lconfig[,..paramIndex]   
+  reducedConfig <- unique(reducedConfig)  # treatments
+  
+  writeLines("\n")
+  writeLines("**Treatments**\n")
+  print(pander(reducedConfig))
+  writeLines("\n")
+  
+  if (paramNumb == 1){
+    sapply(1:length(paramIndices), FUN = function (index){print(pander(summary(factor(config[[paramIndices[index]]]))))})
+  }
+  if(paramNumb > 1){
+    print(pander(summary(interaction(config[,paramIndices, with = FALSE]))))
+  }
+  
+  # make a list of params 
+  params <- data.table(config[[paramIndices[1]]])
+  if(paramNumb > 1){
+    sapply(2:paramNumb, FUN = function (index){assign('params', cbind(params, config[[paramIndices[index]]]), pos = 1)})
+  }
+  
+  orderMeansByFactors = function (){
+    summarize <- function (pos){
+      fact <- reducedConfig[pos,]
+     config$mean[which(params[,1] == fact[[1]] & eval(cond(2)) & eval(cond(3)) & eval(cond(4)) & eval(cond(5)) & eval(cond(6)) & eval(cond(7)))]
+    }
+  cond = function(i){
+    if(i <= paramNumb){quote(params[, ..i] == fact[[i]])}else{TRUE}
+  }
+    
+    return (sapply(1:nrow(reducedConfig), FUN = function(pos){summarize(pos)}))
+  }
+
+  outputMeansOrdered = orderMeansByFactors()
+
+  #interaction(params[,c(1:paramNumb)]) # or without points
+ 
+  
+  # use the lists of means to check if they are normally distributed
+  normalityTestPValue <- sapply(1: length(outputMeansOrdered), FUN = function (pos) {if(length(outputMeansOrdered[[pos]]) > 1){norm <- rnorm(length(outputMeansOrdered[[pos]]), mean(outputMeansOrdered[[pos]]), sd(outputMeansOrdered[[pos]]))
+  chisq.test(outputMeansOrdered[[pos]], norm)$p.value}else{0}})
+  
+  # use the lists of means to check if they are normally distributed    -> for notnullvalues because outputmeansordered is ordered columnwise;
+  #normalityTestPValue <- sapply(1: length(levels(factor(params))), FUN = function (pos) {if(length(outputMeansOrdered[,pos]) > 1){norm <- rnorm(length(outputMeansOrdered[,pos]), mean(outputMeansOrdered[,pos]), sd(outputMeansOrdered[,pos]))
+  #chisq.test(outputMeansOrdered[,pos], norm)$p.value}else{0}})
+  
+  writeLines("\n")
+  writeLines("**Normal distribution**\n")
+  print(pander(normalityTestPValue))
+  
+  param=interaction(params)
+  
+  tests = function (param) {
+    if(length(normalityTestPValue[which(normalityTestPValue > 0.05)]) == length(normalityTestPValue)){
+    HomogeneityPValue <- bartlett.test(lconfig$mean ~ param)$p.value
+    
+    writeLines("\n")
+    writeLines("**Homogeneity of Variance**\n")
+    print(HomogeneityPValue)
+    writeLines("\n")
+    
+    if(HomogeneityPValue <= 0.05){
+      oneway <- oneway.test(lconfig$mean~param)
+      
+      writeLines("**oneway**\n")
+      print(oneway$p.value)
+      
+      writeLines("\n")
+      writeLines("**Posthoc**\n")
+      posthoc <- pairwise.t.test(lconfig$mean, param, pool.sd = FALSE)
+            posthoc <- posthoc$p.value
+      #print(pander(posthoc))
+      posthoc <- fullPTable(posthoc)
+      print(pander(multcompLetters(posthoc, compare="<", threshold = 0.05, Letters = letters, reversed = FALSE)$Letters))
+      writeLines("\n")
+      
+    }else{
+      oneway <- oneway.test(lconfig$mean~param)
+      
+      writeLines("**oneway**\n")
+      print(oneway$p.value)
+      
+      writeLines("\n")
+      writeLines("**Posthoc**\n")
+      posthoc <- pairwise.t.test(lconfig$mean, param, pool.sd = TRUE)
+      posthoc <- posthoc$p.value
+      #print(pander(posthoc))
+      posthoc <- fullPTable(posthoc)
+      print(pander(multcompLetters(posthoc, compare="<", threshold = 0.05, Letters = letters, reversed = FALSE)$Letters))
+      writeLines("\n")
+    }
+  }else{# not normally distributed
+      writeLines("**Fligner-Killeen**\n")
+      fligner <- fligner.test(lconfig$mean ~ param)
+      print(pander(fligner$p.value))
+      
+      writeLines("\n")
+      writeLines("**Kruskal**\n")
+      kruskal <- kruskal.test(lconfig$mean~param)
+      print(pander(kruskal$p.value))
+      writeLines("\n")
+      
+      writeLines("**Posthoc**\n")
+      posthoc <- pairwise.wilcox.test(lconfig$mean, param)
+            posthoc <- posthoc$p.value
+      #print(pander(posthoc))
+      posthoc <- fullPTable(posthoc)
+      print(pander(multcompLetters(posthoc, compare="<", threshold = 0.05, Letters = letters, reversed = FALSE)$Letters))
+      writeLines("\n")
+  }
+  print(" ")
+  }
+  
+  tests(param)
+  
+```
+
