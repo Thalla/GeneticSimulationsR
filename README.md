@@ -2,7 +2,7 @@
 Analysis of the results from [GeneticSimulations](https://github.com/Thalla/GeneticSimulations)
 
 **Naming Convention for data files**  
-config6FactL2029Out0120RandAndMaxL2029Out0110.RData  
+*config6FactL2029Out0120RandAndMaxL2029Out0110.RData* 
 config6Fact -> can be anything that describes the dataset in short  
 The following was simulated with translation type "affinity"  
 L2029 -> parameter livingAarsSeed had values from 20 to 29  
