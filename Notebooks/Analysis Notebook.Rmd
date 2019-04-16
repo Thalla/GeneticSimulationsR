@@ -1,5 +1,5 @@
 ---
-title: "Anova Notebook"
+title: "Analysis Notebook"
 output:
   html_document:
     df_print: paged
@@ -9,9 +9,11 @@ output:
 
 **Overview**
 - load libraries
-- load saved data and give overview
+- load saved data 
 - living dead diagram (output seed <= 10)
 - create subset with high survival rate treatments (10 survivors per treatment)
+- statistical analysis
+- prepare data for Wekas J48
 
 ```{r include=FALSE}
 library(data.table)
@@ -23,12 +25,13 @@ panderOptions('knitr.auto.asis', FALSE)
 library(ggplot2)
 ```
 
-```{r}
+```{r load data}
 load("config6FactL2029Out0120RandAndMaxL2029Out0110.RData")
 config = config6FactL2029Out0120RandAndMaxL2029Out0110
 ```
 
 ```{r living dead diagram}
+#   'config' is used as data
 
 configLiving <- config[which(config$notNullValues == 100000 & config$outputSeed <= 10),]
 configDead <- config[which(config$notNullValues < 100000 & config$outputSeed <= 10),]
@@ -90,6 +93,8 @@ livingDeadHist(configLiving$livingAarsSeed, configDead$livingAarsSeed, "Living a
 # @Description 7 parameters are extracted from a config file. The means are collected into lists. Each list consists of the means of one parameter combination (output seeds 1 to 10). Either the mean of those means can be calculated or the means per list are counted (useful in the case of a living or dead data set). Is the unique(reducedConfig) line included the result is a list with one value per parameter combination. Otherwise the list is as long as the config file. One possible case is to choose all rows with parameter combinations that didn't lead to any dead cells.
 # When the extracted parameters shall be different then there have to be some changes made.
 
+# @Before run previous chunk to define 'configLiving'
+
 lconfig <- configLiving[,c(16, 19:21, 23:25, 1)]
 
 
@@ -129,14 +134,14 @@ par( cex.lab = 1.3, cex.axis = 1.3)
  affinity.5   max.5   random.5   affinity.10   max.10   random.10   affinity.20 
 ------------ ------- ---------- ------------- -------- ----------- -------------
      50         0        0           730         0          0          3020     
---------------------------------------------------------------------------------
-
-Table: Table continues below
-
  
 -------------------------------------------------------
  max.20   random.20   affinity.30   max.30   random.30 
 -------- ----------- ------------- -------- -----------
+--------------------------------------------------------------------------------
+
+Table: Table continues below
+
    0         330         3750         60       1030    
 -------------------------------------------------------
 
@@ -185,8 +190,11 @@ Table: Table continues below
     -----------------------------------
 
 ```{r normal distribution and more, echo=FALSE, message=FALSE, warning=FALSE, render="asis"}
-qqnorm(config6FactL2029Out0120RandAndMaxL2029Out0110$mean, main = "Fitness")
-qqline(config6FactL2029Out0120RandAndMaxL2029Out0110$mean)
+# @Before choose data that shall be analysed
+conf <- config6FactL2029Out0120RandAndMaxL2029Out0110
+
+qqnorm(conf$mean, main = "Fitness")
+qqline(conf$mean)
 
 qqnorm(lconfig$mean, main = "Fitness of surviving cells")
 qqline(lconfig$mean)
@@ -217,12 +225,14 @@ posthoc <- pairwise.t.test(lconfig$mean,factor(lconfig$aarsLifeticksStartValue):
 ```
 
 
+```{r statistical tests eval=FALSE, include=FALSE}
+# @Improve Putting the following code into a function that takes paramIndices as parameter would be useful but after doing so problems appear rather randomly and a solution couldn't be found yet.
 
-
-```{r eval=FALSE, include=FALSE}
+#@Before set paramIndices to the columns of the parameters that shall be anylsed together
 paramIndices <- c(4,2,3,5,1)
 print(paramIndices)
-paramNumb <- length(paramIndices)
+
+  paramNumb <- length(paramIndices)
   config <- lconfig
   reducedConfig <- config[,paramIndices, with = FALSE] #lconfig[,..paramIndex]   
   reducedConfig <- unique(reducedConfig)  # treatments
@@ -342,9 +352,15 @@ paramNumb <- length(paramIndices)
 ```
 
 
-```{r WEKA, eval=FALSE, include=FALSE}
+```{r WEKA transform means to nominal data, eval=FALSE, include=FALSE}
+# @Improve remove redundancy
+
+# @Before set path were csv file shall be saved
+path <- "/Weka/wekaNominalReduced_64_172023aa_ 10outSeed_5livingSeed.csv"
+
 conf <- config
 
+# make means nominal in 0.02 steps
 nominalMean <- conf$mean
 nominalMean[nominalMean <= 0.02] <- 0.2
 nominalMean[nominalMean <= 0.04 & nominalMean >0.02] <- 0.04
@@ -374,9 +390,10 @@ nominalMean[nominalMean <= 0.5 & nominalMean >0.48] <- 0.5
 nominalMean[nominalMean <= 0.52 & nominalMean >0.5] <- 0.52
 conf <- cbind(conf, nominalMean)
 
+# select desired columns
 mainData <- data.frame(translationtype = conf$translationType, geneNumb = conf$geneNumb, initAaNumb = conf$initAaNumb, similarAars = conf$similarAars, aarsLifeticksStartValue = conf$aarsLifeticksStartValue, livingAarsStartNumb = conf$livingAarsStartNumb, livingAarsSeed = conf$livingAarsSeed, mean = conf$nominalMean)
 
-fwrite(mainData, "G:/Hanna/R/ANOVA/wekaNominalReduced_64_172023aa_ 10outSeed_5livingSeed.csv")
+fwrite(mainData, path)
 
 ```
 

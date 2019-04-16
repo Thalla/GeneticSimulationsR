@@ -1,0 +1,179 @@
+---
+title: "Cheat Sheet"
+output:
+  word_document: default
+  html_notebook: default
+---
+```{r plots}
+# set up field for multiple plots
+par(mfrow = c(2, 2))
+
+# add data points in barplot with three bars
+points(c(1,20,50), col="red")
+
+
+# correlation matrix
+# char data has to be transformed to numeric: first to factor then as.numeric
+corrplot(cor(data), type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+```
+
+```{r apply}
+# change value of variable positioned outside the apply function in the function
+params <- data.table(config[[paramIndices[1]]])
+  sapply(2:paramNumb, FUN = function (index){assign('params', cbind(params, config[[paramIndices[index]]]), pos = 1)})
+```
+
+```{r dynamical function calls}
+function1 = function(x){x + 3}
+function2 = function(x){x + 4}
+functionlist = c(function1, function2)
+sapply(1:length(functionlist), FUN = function(index){functionlist[[index]](index+1)})
+
+```
+```{r how to avoid redundancy}
+# Instead of this:
+ orderMeansBy1Factor = function (){
+    summarize <- function (p1){
+     config$mean[which(params[,1] == p1)]
+    }
+    
+    return (sapply(1:nrow(reducedConfig), FUN = function(pos){summarize(reducedConfig[pos,1])}))
+  }
+  
+  orderMeansBy2Factors = function (){
+    summarize <- function (p1, p2){
+     config$mean[which(params[,1] == p1 & params[,2] == p2)]
+    }
+    
+    return (sapply(1:nrow(reducedConfig), FUN = function(pos){i <- reducedConfig[pos,]; summarize(i[[1]], i[[2]])}))
+  }
+  
+  # ........ till orderMeansBy7Factors
+  
+   orderMeans = c(orderMeansBy1Factor, orderMeansBy2Factors) # ... and the rest....
+  outputMeansOrdered = orderMeans[[paramNumb]]()
+  
+# use quote and eval
+  
+  x = function (){
+    summarize <- function (pos){
+      fact <- reducedConfig[pos,]
+     config$mean[which(params[,1] == fact[[1]] & eval(cond(2)) & eval(cond(3)) & eval(cond(4)) & eval(cond(5)) & eval(cond(6)) & eval(cond(7)))]
+    }
+  cond = function(i){
+    if(i <= paramNumb){quote(params[,..i] == fact[[i]])}else{TRUE}
+  }
+    return (sapply(1:nrow(reducedConfig), FUN = function(pos){summarize(pos)}))
+  }
+  x()
+  
+  
+  
+  
+  
+  
+  # make a list of params to reduce overhead when handling one to x parameters nearly same
+  params <- data.table(config[[paramIndices[1]]])
+  sapply(2:paramNumb, FUN = function (index){assign('params', cbind(params, config[[paramIndices[index]]]), pos = 1)})
+```
+
+```{r lists in data.table columns}
+data.table(c(7,8),list(c(1,2),c(3,4)))
+```
+
+
+```{r interaction}
+# interactions
+interact = interaction(configLiving$initAaNumb,configLiving$geneNumb, sep = ":")
+# followint sets have the same number of elements
+length(interact[which(interact == "20.10")] ) == nrow(configLiving[initAaNumb == 20 & geneNumb == 10])
+# interactions can be generated with interaction() or factor():factor()
+interact == factor(configLiving$initAaNumb):factor(configLiving$geneNumb)
+
+# always use the column names and not the numbers ([,2]) (lists are not accepted)
+interact <- interaction(factor(lnconfig$translationType), factor(lnconfig$geneNumb), factor(lnconfig$initAaNumb), factor(lnconfig$similarAars), factor(lnconfig$aarsLifeticksStartValue), factor(lnconfig$livingAarsStartNumb), factor(lnconfig$livingAarsSeed))
+```
+
+```{r ANOVA}
+anovaResult <- aov(mean ~ factor(initAaNumb) + factor(geneNumb) + factor(aarsLifeticksStartValue) + factor(livingAarsStartNumb) + factor(livingAarsSeed) + factor(similarAars) + factor(translationType), data = configLiving)
+summary(anovaResult)
+
+
+anovaResult <- aov(mean ~ factor(initAaNumb) * factor(geneNumb) * factor(aarsLifeticksStartValue) * factor(livingAarsStartNumb) * factor(livingAarsSeed) * factor(similarAars) * factor(translationType), data = configLiving)
+summary(anovaResult)
+
+aov(lengths ~ interact)
+```
+
+```{r select columns}
+dataset(,c(16, 19, 20, 21, 23, 24, 25))
+datatable[,..8]
+datatable[[8]]
+# select column by using a variable for the column position
+datatable[,c(index), with = FALSE]
+```
+
+```{r which}
+# only one '&' !
+config$mean[which(params[,1] == p1 & params[,2] == p2)]
+# delete rows from data frame
+mainData[which(mainData$aarsLifeticksStartValue == 15 & mainData$mean == 0.1),]<-NA
+```
+
+
+
+```{r factors}
+# ordered factor
+f1 <- factor(values, ordered = TRUE)
+
+# from factor to numeric 
+values = as.numeric(paste(f1))
+```
+
+```{r scatterplots}
+# car::scatterplot -> has regression line and boxplots
+# scatterplot.smooth -> only regression line?
+```
+
+```{r histogram}
+library(MASS)
+truehist(numericData)
+truehist(mainData$mean, col = ("yellow"), prob = TRUE, ymax = 30)
+```
+
+```{r bagplot}
+#similar to boxplot
+library(aplpack)
+bagplot(unsteady.means, steady.means)
+```
+
+```{r set x axis}
+plot(0:23, runif(24, min=0, max=1800), type="l", xlim=c(0,23), 
+ylim=c(0,1800), xlab="hour", ylab="visitor activity", xaxt='n') 
+
+axis(side=1, at=0:23, cex.axis=.5) 
+```
+
+```{fread r}
+# Error: cannot allocate vector of size ...
+# Solution that failed: gc() . gc() seems to be pretty useless if you don't want to free memory for another program, because R will take the memory at the time it is needed. So it is not important to tell R to do some garbage collection but to free memory with rm().
+# Solution: Start a new R session. 
+```
+
+```{r attach}
+# search() shows search path
+search()
+# Global Env. is always first
+# attach puts the attached object next
+attach(x)
+search()
+# one more attach leads to having x twice in the search path
+attach(x)
+search()
+# detach removes it 
+detach(x)
+detach(x)
+search()
+
+```
+

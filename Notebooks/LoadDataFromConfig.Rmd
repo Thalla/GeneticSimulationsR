@@ -1,5 +1,5 @@
 ---
-title: "Load Data"
+title: "Load Data from config file"
 output: html_notebook
 ---
 
@@ -16,7 +16,7 @@ fitness <- c()
 
 ```{r read config data, eval=FALSE, include=FALSE}
   # @before set path to config file
-  basePath <- "G:/Hanna/SimulationTree/selection_false/ANOVA/translMethod_random/"
+  basePath <- "C://Users//feroc//IdeaProjects//GeneticSimulations//SimulationResults//"
   configPath <- paste(basePath, "config.csv", sep = "")
   
   # read config
@@ -88,7 +88,21 @@ fitnessPaths <- c()
   
   
   
-  # mean over all outputs with same params but different output seed
+ # if desired run next chunk at this point
+  
+  
+  
+  newConfig <- cbind(descrStatistics, newConfig)
+  
+  config <- rbind(config, newConfig)
+
+  rm(newConfig)
+  rm(descrStatistics)
+```
+```{r mean of means per output seed, eval=FALSE, include=FALSE}
+ # mean over all outputs with same params but different output seed
+ # run this before descrStatistics is added to newConfig (see chunk above)
+
    reducedConfig <- newConfig
  config <- newConfig
 
@@ -109,59 +123,8 @@ fitnessPaths <- c()
  
  meansOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){mean(outputMeansOrdered[[pos]])})
  
- reducedConfig = cbind(reducedConfig, meansOfOutputMeans)
-  
-  
-  
-  
-  
-  
-  
-  newConfig <- cbind(descrStatistics, newConfig)
-  
-  config <- rbind(config, newConfig)
-
-  rm(newConfig)
-  rm(descrStatistics)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r Summarize Out, 6 params + pre conditions, eval=FALSE, include=FALSE}
-# CAUTION: Take reducedConfig and put it in new variable
-
- reducedConfig <- newConfig
- config <- newConfig
-
- reducedConfig$aarsPath <- NULL
- reducedConfig$mrnaPath <- NULL
- reducedConfig$livingAarsPath <- NULL
- reducedConfig$livingAarsDir <- NULL
- reducedConfig$outputSeed <- NULL
- reducedConfig <- unique(reducedConfig)
- 
- summarizeByOutputSeed <- function (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10){
-   config$mean[which(config$translationType == p1 & config$mrnaSeed == p2 & config$codonNumb == p3 & config$geneNumb == p4 & config$initAaNumb == p5 & config$similarAars == p6 & config$maxAnticodonNumb == p7 & config$aarsLifeticksStartValue == p8 & config$livingAarsStartNumb == p9 & config$livingAarsSeed == p10)]
- }
- 
- outputMeansOrdered <- sapply(1:nrow(reducedConfig), FUN = function(pos){i <- reducedConfig[pos,]; summarizeByOutputSeed(i[[1]], i[[2]], i[[3]], i[[4]], i[[5]], i[[6]], i[[7]], i[[8]], i[[9]], i[[10]])})
- 
- #outputMeansOrdered <- split(as.vector(outputMeansOrdered), seq(nrow(reducedConfig)))
- 
- meansOfOutputMeans <- sapply(1: length(outputMeansOrdered), FUN = function(pos){mean(outputMeansOrdered[[pos]])})
- 
- normalityTestPValue <- sapply(1: length(outputMeansOrdered), FUN = function (pos) {(shapiro.test(outputMeansOrdered[[pos]]))$p.value})
+ # normalityTestPValue <- sapply(1: length(outputMeansOrdered), FUN = function (pos) {(shapiro.test(outputMeansOrdered[[pos]]))$p.value})
  
  reducedConfig = cbind(reducedConfig, meansOfOutputMeans)
 ```
+
