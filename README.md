@@ -1,10 +1,12 @@
 # GeneticSimulationsR
-Analysis of the results from [GeneticSimulations](https://github.com/Thalla/GeneticSimulations)
+Analysis of the results from [GeneticSimulations](https://github.com/Thalla/GeneticSimulations).
+
+Especially the influence of various start conditions is observed.  
 
 **Naming Convention for data files**  
-*config6FactL2029Out0120RandAndMaxL2029Out0110.RData* 
+*config6FactL2029Out0120RandAndMaxL2029Out0110.RData* (this dataset is provided)  
 config6Fact -> can be anything that describes the dataset in short  
-The following was simulated with translation type "affinity"  
+The following was simulated with translation type "affinity" (default assumption)  
 L2029 -> parameter livingAarsSeed has values from 20 to 29  
 Out0120 -> parameter outputSeed has values from 1 to 20  
 RandAndMax -> the following was simulated with translation types "random" and "max"  
@@ -21,3 +23,5 @@ The parameter combinations with translation type "affinity" were simulated with 
 - *Long Run Notebook*: Analysis of one simulated parameter combination  
 - *CheatSheet*: Useful code snippets  
 
+**Caution**  
+The notebooks are organized as a set of tools that can be used in various ways. So don't run the whole notebook at once. Run chunk for chunk and check the comments in before. 
