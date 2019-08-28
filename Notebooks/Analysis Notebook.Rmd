@@ -32,6 +32,7 @@ config = config6FactL2029Out0120RandAndMaxL2029Out0110
 
 ```{r living dead diagram}
 #   'config' is used as data
+# @Caution: see *
 
 configLiving <- config[which(config$notNullValues == 100000 & config$outputSeed <= 10),]
 configDead <- config[which(config$notNullValues < 100000 & config$outputSeed <= 10),]
@@ -44,6 +45,8 @@ deadCounts <- deadCounts[which(deadCounts != 0)]
 livingCounts <- livingHist$counts
 livingCounts <- livingCounts[which(livingCounts != 0)]
 
+# * Assumption: When not all factors have more than zero instances then the first factor is the factor with zero instances. 
+if(length(livingCounts) < length(deadCounts)){livingCounts <- c(0,livingCounts)}
 matrix = matrix(rbind(livingCounts, deadCounts),nrow = 2)
 colnames(matrix)=c(levels(factor(dead)))
 rownames(matrix) = c("living", "dead")
